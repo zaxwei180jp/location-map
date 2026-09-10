@@ -398,6 +398,9 @@
     <div class="container">
         <div class="panel">
             <h2>Select Locations</h2>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <input type="text" id="searchInput" placeholder="Search locations..." style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px;">
+            </div>
             <div id="loadingMessage" class="loading">
                 <span class="spinner"></span>Loading...
             </div>
@@ -458,6 +461,22 @@
             await loadLocations();
             initMap();
             renderLocations();
+            document.getElementById('searchInput').addEventListener('input', () => {
+                renderLocations();
+            });
+        }
+
+        function getNextCode() {
+            if (allLocations.length === 0) return 'LC001';
+            
+            const codes = allLocations.map(loc => {
+                const match = loc.code.match(/LC(\d+)/);
+                return match ? parseInt(match[1]) : 0;
+            });
+            
+            const maxCode = Math.max(...codes, 0);
+            const nextNum = (maxCode + 1).toString().padStart(3, '0');
+            return `LC${nextNum}`;
         }
 
         async function loadLocations() {
@@ -494,9 +513,22 @@
 
         function renderLocations() {
             const listDiv = document.getElementById('locationList');
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            const filtered = allLocations.filter(loc => 
+                loc.name.toLowerCase().includes(searchTerm) ||
+                loc.code.toLowerCase().includes(searchTerm) ||
+                loc.address.toLowerCase().includes(searchTerm)
+            );
+
             listDiv.innerHTML = '';
 
-            allLocations.forEach(loc => {
+            if (filtered.length === 0) {
+                listDiv.innerHTML = '<div class="empty-state"><p>No locations found</p></div>';
+                return;
+            }
+
+            filtered.forEach(loc => {
                 const checked = selectedLocations.find(s => s.id === loc.id);
                 const item = document.createElement('label');
                 item.className = 'location-item';
@@ -657,12 +689,13 @@
         function addBulkRow() {
             const id = `bulk-${bulkRowCount++}`;
             const container = document.getElementById('bulkRows');
+            const nextCode = getNextCode();
             
             const row = document.createElement('div');
             row.className = 'bulk-row';
             row.id = id;
             row.innerHTML = `
-                <input type="text" placeholder="Code" data-field="code">
+                <input type="text" placeholder="Code" data-field="code" value="${nextCode}">
                 <input type="text" placeholder="Name" data-field="name">
                 <input type="text" placeholder="Address" data-field="address">
                 <input type="text" placeholder="Type" data-field="type">
@@ -738,6 +771,11 @@
             if (success > 0) {
                 await loadLocations();
                 renderLocations();
+                
+                // 清空所有行
+                document.getElementById('bulkRows').innerHTML = '';
+                // 添加一行新的表单
+                addBulkRow();
             }
         }
 
