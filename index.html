@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>地點地圖顯示</title>
+    <title>地点地图显示</title>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB0bNAw9W8fOX8-hLw2wfW4JW_M1FWxFYo"></script>
     <style>
         * {
@@ -50,7 +50,6 @@
             }
         }
 
-        /* 左邊面板 */
         .panel {
             background: white;
             border-radius: 8px;
@@ -66,7 +65,6 @@
             margin-bottom: 15px;
         }
 
-        /* 地點列表 */
         .location-list {
             space-y: 8px;
         }
@@ -117,13 +115,11 @@
             white-space: nowrap;
         }
 
-        /* 分隔線 */
         .divider {
             border-top: 1px solid #e5e7eb;
             margin: 15px 0;
         }
 
-        /* 臨時地點 */
         .temp-section {
             margin-bottom: 15px;
         }
@@ -182,7 +178,6 @@
             color: #991b1b;
         }
 
-        /* 按鈕 */
         .btn {
             width: 100%;
             padding: 10px;
@@ -213,7 +208,6 @@
             background: #9ca3af;
         }
 
-        /* 表單 */
         .form-group {
             margin-bottom: 12px;
         }
@@ -267,7 +261,6 @@
             margin-top: 4px;
         }
 
-        /* 統計 */
         .stats {
             font-size: 13px;
             color: #666;
@@ -276,7 +269,6 @@
             margin-top: 15px;
         }
 
-        /* 地圖和右邊面板 */
         #map {
             width: 100%;
             height: 600px;
@@ -364,37 +356,34 @@
 </head>
 <body>
     <header>
-        <h1>📍 地點地圖顯示</h1>
-        <p>選擇地點在地圖上顯示</p>
+        <h1>📍 地点地图显示</h1>
+        <p>选择地点在地图上显示</p>
     </header>
 
     <div class="container">
-        <!-- 左邊：地點選擇 -->
         <div class="panel">
-            <h2>地點選擇</h2>
+            <h2>地点选择</h2>
             <div id="loadingMessage" class="loading">
-                <span class="spinner"></span>載入中...
+                <span class="spinner"></span>载入中...
             </div>
             <div id="locationList" class="location-list"></div>
 
             <div class="divider"></div>
 
-            <!-- 臨時地點 -->
             <div id="tempSection" class="temp-section" style="display: none;">
-                <h3>臨時地點</h3>
+                <h3>临时地点</h3>
                 <div id="tempPoints" class="temp-points"></div>
             </div>
 
-            <!-- 新增臨時地點 -->
             <div id="tempForm" style="display: none;">
                 <div class="form-group">
-                    <label>地點名稱 *</label>
-                    <input type="text" id="tempName" placeholder="例如：臨時客戶">
+                    <label>地点名称 *</label>
+                    <input type="text" id="tempName" placeholder="例如：临时客户">
                 </div>
                 <div class="form-group">
-                    <label>地址或座標 *</label>
-                    <textarea id="tempAddress" placeholder="例如：東京都渋谷区1-1-1 或 34.677556, 135.506750"></textarea>
-                    <div class="form-hint">支援地址、DMS 座標或十進位座標</div>
+                    <label>地址或座标 *</label>
+                    <textarea id="tempAddress" placeholder="例如：东京都渋谷区1-1-1 或 34.677556, 135.506750"></textarea>
+                    <div class="form-hint">支援地址、DMS 座标或十进位座标</div>
                 </div>
                 <div id="tempError" class="form-error" style="display: none;"></div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -403,22 +392,47 @@
                 </div>
             </div>
 
-            <button class="btn btn-primary" id="addTempBtn" onclick="toggleTempForm()">+ 新增臨時地點</button>
+            <button class="btn btn-primary" id="addTempBtn" onclick="toggleTempForm()">+ 新增临时地点</button>
+
+            <div class="divider"></div>
+
+            <div id="addToDbForm" style="display: none;">
+                <h3 style="font-size: 13px; font-weight: 600; color: #666; margin-bottom: 12px; text-transform: uppercase;">新增到固定地点库</h3>
+                <div class="form-group">
+                    <label>流水编号（可选）</label>
+                    <input type="text" id="dbCode" placeholder="例如：LC002">
+                </div>
+                <div class="form-group">
+                    <label>地点名称 *</label>
+                    <input type="text" id="dbName" placeholder="例如：新客户">
+                </div>
+                <div class="form-group">
+                    <label>地址 *</label>
+                    <input type="text" id="dbAddress" placeholder="例如：东京都渋谷区1-1-1">
+                </div>
+                <div id="dbError" class="form-error" style="display: none;"></div>
+                <div id="dbSuccess" class="form-success" style="display: none;"></div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button class="btn btn-primary" onclick="addToDatabase()">新增</button>
+                    <button class="btn btn-secondary" onclick="toggleAddToDbForm()">取消</button>
+                </div>
+            </div>
+
+            <button class="btn btn-secondary" id="addToDbBtn" onclick="toggleAddToDbForm()" style="margin-bottom: 15px;">📌 新增到固定地点库</button>
 
             <div class="stats">
-                已選擇 <strong id="selectedCount">0</strong> 個地點
+                已选择 <strong id="selectedCount">0</strong> 个地点
             </div>
         </div>
 
-        <!-- 右邊：地圖 -->
         <div>
             <div id="map"></div>
             <div class="map-info">
-                <h3>顯示的地點</h3>
+                <h3>显示的地点</h3>
                 <div id="mapPoints" class="point-list">
                     <div class="empty-state">
                         <div class="empty-state-icon">📌</div>
-                        <p>選擇地點後，地圖會顯示位置</p>
+                        <p>选择地点后，地图会显示位置</p>
                     </div>
                 </div>
             </div>
@@ -426,13 +440,11 @@
     </div>
 
     <script>
-        // ========== 配置 ==========
         const CONFIG = {
             notionDatabaseId: '3d75bfd83387806b882bfdeb4ca2e7e9',
             cloudflareWorkerUrl: 'https://throbbing-feather-5f4c.zaxwei180jp.workers.dev',
         };
 
-        // ========== 全局狀態 ==========
         let allLocations = [];
         let selectedLocations = [];
         let tempPoints = [];
@@ -440,14 +452,12 @@
         let markers = [];
         let infoWindows = [];
 
-        // ========== 初始化 ==========
         async function init() {
             await loadLocations();
             initMap();
             renderLocations();
         }
 
-        // ========== 載入位置 ==========
         async function loadLocations() {
             try {
                 const response = await fetch(
@@ -458,16 +468,15 @@
                 document.getElementById('loadingMessage').style.display = 'none';
             } catch (error) {
                 console.error('Error loading locations:', error);
-                document.getElementById('loadingMessage').innerHTML = '❌ 無法載入地點。檢查 Worker 網址是否正確。';
+                document.getElementById('loadingMessage').innerHTML = '❌ 无法载入地点。检查 Worker 网址是否正确。';
             }
         }
 
-        // ========== 初始化地圖 ==========
         function initMap() {
             if (allLocations.length === 0) {
                 map = new google.maps.Map(document.getElementById('map'), {
                     zoom: 12,
-                    center: { lat: 35.6762, lng: 139.6503 }, // 東京預設位置
+                    center: { lat: 35.6762, lng: 139.6503 },
                 });
                 return;
             }
@@ -482,13 +491,12 @@
             });
         }
 
-        // ========== 顯示地點列表 ==========
         function renderLocations() {
             const listDiv = document.getElementById('locationList');
             listDiv.innerHTML = '';
 
             if (allLocations.length === 0) {
-                listDiv.innerHTML = '<div class="empty-state"><p>沒有地點</p></div>';
+                listDiv.innerHTML = '<div class="empty-state"><p>没有地点</p></div>';
                 return;
             }
 
@@ -508,7 +516,6 @@
             });
         }
 
-        // ========== 切換地點選擇 ==========
         function toggleLocation(id, code, name, lat, lng) {
             const existing = selectedLocations.find(s => s.id === id);
             if (existing) {
@@ -519,10 +526,16 @@
             updateDisplay();
         }
 
-        // ========== 新增臨時地點 ==========
         function toggleTempForm() {
             const form = document.getElementById('tempForm');
             const btn = document.getElementById('addTempBtn');
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+            btn.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function toggleAddToDbForm() {
+            const form = document.getElementById('addToDbForm');
+            const btn = document.getElementById('addToDbBtn');
             form.style.display = form.style.display === 'none' ? 'block' : 'none';
             btn.style.display = form.style.display === 'none' ? 'block' : 'none';
         }
@@ -533,10 +546,9 @@
             const errorDiv = document.getElementById('tempError');
 
             errorDiv.style.display = 'none';
-            errorDiv.textContent = '';
 
             if (!name || !address) {
-                errorDiv.textContent = '❌ 請輸入名稱和地址';
+                errorDiv.textContent = '❌ 请输入名称和地址';
                 errorDiv.style.display = 'block';
                 return;
             }
@@ -545,26 +557,64 @@
                 const coords = parseCoordinates(address);
                 const tempId = `temp-${Date.now()}`;
 
-                tempPoints.push({
-                    id: tempId,
-                    name,
-                    lat: coords.lat,
-                    lng: coords.lng,
-                    isTemp: true,
-                });
-
-                selectedLocations.push({
-                    id: tempId,
-                    name,
-                    lat: coords.lat,
-                    lng: coords.lng,
-                    isTemp: true,
-                });
+                tempPoints.push({ id: tempId, name, lat: coords.lat, lng: coords.lng, isTemp: true });
+                selectedLocations.push({ id: tempId, name, lat: coords.lat, lng: coords.lng, isTemp: true });
 
                 document.getElementById('tempName').value = '';
                 document.getElementById('tempAddress').value = '';
                 toggleTempForm();
                 updateDisplay();
+            } catch (error) {
+                errorDiv.textContent = `❌ ${error.message}`;
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        async function addToDatabase() {
+            const code = document.getElementById('dbCode').value.trim();
+            const name = document.getElementById('dbName').value.trim();
+            const address = document.getElementById('dbAddress').value.trim();
+            const errorDiv = document.getElementById('dbError');
+            const successDiv = document.getElementById('dbSuccess');
+
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+
+            if (!name || !address) {
+                errorDiv.textContent = '❌ 请输入名称和地址';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch(
+                    `${CONFIG.cloudflareWorkerUrl}?databaseId=${CONFIG.notionDatabaseId}`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ code, name, address }),
+                    }
+                );
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    errorDiv.textContent = `❌ ${data.error || '新增失败'}`;
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+
+                successDiv.textContent = `✅ 地点已新增！座标：${data.data.lat.toFixed(6)}, ${data.data.lng.toFixed(6)}`;
+                successDiv.style.display = 'block';
+
+                document.getElementById('dbCode').value = '';
+                document.getElementById('dbName').value = '';
+                document.getElementById('dbAddress').value = '';
+
+                await loadLocations();
+                renderLocations();
+
+                setTimeout(() => toggleAddToDbForm(), 2000);
             } catch (error) {
                 errorDiv.textContent = `❌ ${error.message}`;
                 errorDiv.style.display = 'block';
@@ -577,14 +627,11 @@
             updateDisplay();
         }
 
-        // ========== 座標解析 ==========
         function parseCoordinates(input) {
-            // DMS 格式檢查
             if (input.includes('°') || input.includes('º')) {
                 return parseDMS(input);
             }
 
-            // 十進位格式
             const parts = input.split(/[,\s]+/).filter(p => p.trim());
             if (parts.length >= 2) {
                 const lat = parseFloat(parts[0]);
@@ -594,7 +641,7 @@
                 }
             }
 
-            throw new Error('無法解析座標。支援格式：地址、DMS（34°40\'39.2"N）或十進位（34.677556, 135.506750）');
+            throw new Error('无法解析座标。支援格式：地址、DMS 座标或十进位座标');
         }
 
         function parseDMS(input) {
@@ -602,7 +649,7 @@
             const matches = [...input.matchAll(dmsRegex)];
 
             if (matches.length < 2) {
-                throw new Error('DMS 格式不正確。例如：34°40\'39.2"N 135°30\'24.3"E');
+                throw new Error('DMS 格式不正确。例如：34°40\'39.2"N 135°30\'24.3"E');
             }
 
             const lat = dmsToDecimal(parseFloat(matches[0][1]), parseFloat(matches[0][2]), parseFloat(matches[0][3]), matches[0][4]);
@@ -619,7 +666,6 @@
             return decimal;
         }
 
-        // ========== 更新顯示 ==========
         function updateDisplay() {
             updateStats();
             updateTempSection();
@@ -628,7 +674,7 @@
         }
 
         function updateStats() {
-            document.getElementById('selectedCount').textContent = selectedLocations.length + tempPoints.length;
+            document.getElementById('selectedCount').textContent = selectedLocations.length;
         }
 
         function updateTempSection() {
@@ -652,7 +698,6 @@
         }
 
         function updateMap() {
-            // 清除舊標記
             markers.forEach(marker => marker.setMap(null));
             infoWindows.forEach(iw => iw.close());
             markers = [];
@@ -662,7 +707,6 @@
                 return;
             }
 
-            // 計算邊界
             const bounds = new google.maps.LatLngBounds();
 
             selectedLocations.forEach((loc, index) => {
@@ -686,7 +730,7 @@
                             <div style="margin-top: 5px; color: #666; font-size: 12px;">
                                 ${loc.lat.toFixed(6)}, ${loc.lng.toFixed(6)}
                             </div>
-                            ${loc.isTemp ? '<div style="color: #b8860b; font-size: 11px; margin-top: 5px;">臨時地點</div>' : ''}
+                            ${loc.isTemp ? '<div style="color: #b8860b; font-size: 11px; margin-top: 5px;">临时地点</div>' : ''}
                         </div>
                     `,
                 });
@@ -714,7 +758,7 @@
                 container.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-state-icon">📌</div>
-                        <p>選擇地點後，地圖會顯示位置</p>
+                        <p>选择地点后，地图会显示位置</p>
                     </div>
                 `;
                 return;
@@ -724,12 +768,11 @@
                 <div class="point-item ${loc.isTemp ? 'temp' : ''}">
                     <div class="point-marker">${index + 1}</div>
                     <span>${loc.name}</span>
-                    ${loc.isTemp ? '<span style="font-size: 11px; background: #fcd34d; color: #78350f; padding: 2px 6px; border-radius: 3px;">臨時</span>' : ''}
+                    ${loc.isTemp ? '<span style="font-size: 11px; background: #fcd34d; color: #78350f; padding: 2px 6px; border-radius: 3px;">临时</span>' : ''}
                 </div>
             `).join('');
         }
 
-        // 頁面載入時初始化
         window.addEventListener('load', init);
     </script>
 </body>
