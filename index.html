@@ -508,7 +508,14 @@
                     `${CONFIG.cloudflareWorkerUrl}?databaseId=${CONFIG.notionDatabaseId}`
                 );
                 const data = await response.json();
-                allLocations = data;
+                
+                // 按 code 升序排序
+                allLocations = data.sort((a, b) => {
+                    const numA = parseInt(a.code.match(/\d+/)?.[0] || 0);
+                    const numB = parseInt(b.code.match(/\d+/)?.[0] || 0);
+                    return numA - numB;
+                });
+                
                 document.getElementById('loadingMessage').style.display = 'none';
             } catch (error) {
                 console.error('Error loading locations:', error);
@@ -648,9 +655,17 @@
 
         function renderEditList() {
             const listDiv = document.getElementById('editList');
+            
+            // 按 code 升序排序
+            const sorted = [...allLocations].sort((a, b) => {
+                const numA = parseInt(a.code.match(/\d+/)?.[0] || 0);
+                const numB = parseInt(b.code.match(/\d+/)?.[0] || 0);
+                return numA - numB;
+            });
+
             listDiv.innerHTML = '';
 
-            allLocations.forEach(loc => {
+            sorted.forEach(loc => {
                 const row = document.createElement('div');
                 row.className = 'location-row';
                 row.innerHTML = `
