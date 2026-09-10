@@ -212,10 +212,11 @@
             background: white;
             border-radius: 8px;
             padding: 40px;
-            max-width: 1200px;
-            width: 95%;
+            max-width: 1400px;
+            width: 98%;
             max-height: 95vh;
             overflow-y: auto;
+            overflow-x: hidden;
         }
 
         .modal-header {
@@ -270,70 +271,50 @@
             display: block;
         }
 
+        #editList, #bulkRows {
+            overflow-x: auto;
+            padding-right: 10px;
+        }
+
         .location-row {
             display: grid;
-            grid-template-columns: 1fr 1.5fr 1.5fr 1fr 1fr auto auto;
-            gap: 12px;
-            padding: 16px;
+            grid-template-columns: 0.8fr 1.2fr 1.2fr 0.8fr 0.8fr auto auto;
+            gap: 8px;
+            padding: 14px;
             border: 1px solid #e5e7eb;
             border-radius: 6px;
-            margin-bottom: 14px;
+            margin-bottom: 12px;
             align-items: center;
+            min-width: 1050px;
         }
 
         .location-row input {
-            padding: 10px;
+            padding: 8px;
             border: 1px solid #d1d5db;
             border-radius: 4px;
-            font-size: 14px;
-        }
-
-        .btn-small {
-            padding: 8px 16px;
-            font-size: 13px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        .btn-edit {
-            background: #3b82f6;
-            color: white;
-        }
-
-        .btn-delete {
-            background: #ef4444;
-            color: white;
-        }
-
-        .bulk-textarea {
-            width: 100%;
-            min-height: 300px;
-            padding: 12px;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            font-family: monospace;
             font-size: 12px;
+            min-width: 0;
         }
 
         .bulk-row {
             display: grid;
-            grid-template-columns: 1fr 1.5fr 1.5fr 1fr 1fr auto;
-            gap: 12px;
-            padding: 16px;
+            grid-template-columns: 0.8fr 1.2fr 1.2fr 0.8fr 0.8fr auto;
+            gap: 8px;
+            padding: 14px;
             border: 1px solid #d1d5db;
             border-radius: 6px;
-            margin-bottom: 14px;
+            margin-bottom: 12px;
             background: #fafafa;
             align-items: center;
+            min-width: 1000px;
         }
 
         .bulk-row input {
-            padding: 10px;
+            padding: 8px;
             border: 1px solid #d1d5db;
             border-radius: 4px;
-            font-size: 14px;
+            font-size: 12px;
+            min-width: 0;
         }
 
         .bulk-row input:focus {
@@ -343,17 +324,46 @@
         }
 
         .btn-remove-bulk {
-            padding: 8px 16px;
+            padding: 6px 10px;
             background: #ef4444;
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             font-weight: 600;
-            font-size: 13px;
+            font-size: 11px;
+            white-space: nowrap;
         }
 
         .btn-remove-bulk:hover {
+            background: #dc2626;
+        }
+
+        .btn-small {
+            padding: 6px 10px;
+            font-size: 11px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .btn-edit {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #2563eb;
+        }
+
+        .btn-delete {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-delete:hover {
             background: #dc2626;
         }
 
