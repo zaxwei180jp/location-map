@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>地點地圖顯示</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB0bNAw9W8fOX8-hLw2wfW4JW_M1FWxFYo"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            background: #f3f4f6;
+        }
+
+        header {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            font-size: 28px;
+            color: #111;
+            margin-bottom: 5px;
+        }
+
+        header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px 20px;
+            display: grid;
+            grid-template-columns: 1fr 3fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 左邊面板 */
+        .panel {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 20px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .panel h2 {
+            font-size: 18px;
+            color: #111;
+            margin-bottom: 15px;
+        }
+
+        /* 地點列表 */
+        .location-list {
+            space-y: 8px;
+        }
+
+        .location-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-bottom: 8px;
+        }
+
+        .location-item:hover {
+            background: #f9fafb;
+        }
+
+        .location-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-top: 2px;
+            cursor: pointer;
+            accent-color: #4f46e5;
+        }
+
+        .location-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .location-info .name {
+            font-weight: 600;
+            color: #111;
+            font-size: 14px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .location-info .address {
+            font-size: 12px;
+            color: #666;
+            margin-top: 2px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* 分隔線 */
+        .divider {
+            border-top: 1px solid #e5e7eb;
+            margin: 15px 0;
+        }
+
+        /* 臨時地點 */
+        .temp-section {
+            margin-bottom: 15px;
+        }
+
+        .temp-section h3 {
+            font-size: 13px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .temp-points {
+            background: #fef3c7;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .temp-point {
+            background: white;
+            border-radius: 4px;
+            padding: 8px;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+        }
+
+        .temp-point:last-child {
+            margin-bottom: 0;
+        }
+
+        .temp-point-name {
+            font-weight: 600;
+            color: #111;
+        }
+
+        .temp-point-coords {
+            font-family: monospace;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .btn-remove {
+            background: none;
+            border: none;
+            color: #dc2626;
+            cursor: pointer;
+            padding: 4px;
+            font-size: 16px;
+        }
+
+        .btn-remove:hover {
+            color: #991b1b;
+        }
+
+        /* 按鈕 */
+        .btn {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary {
+            background: #4f46e5;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #4338ca;
+        }
+
+        .btn-secondary {
+            background: #d1d5db;
+            color: #111;
+        }
+
+        .btn-secondary:hover {
+            background: #9ca3af;
+        }
+
+        /* 表單 */
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 4px;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 13px;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
+            font-family: monospace;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .form-hint {
+            font-size: 11px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .form-error {
+            color: #dc2626;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .form-success {
+            color: #16a34a;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        /* 統計 */
+        .stats {
+            font-size: 13px;
+            color: #666;
+            padding-top: 15px;
+            border-top: 1px solid #e5e7eb;
+            margin-top: 15px;
+        }
+
+        /* 地圖和右邊面板 */
+        #map {
+            width: 100%;
+            height: 600px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .map-info {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .map-info h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #111;
+            margin-bottom: 10px;
+        }
+
+        .point-list {
+            font-size: 13px;
+        }
+
+        .point-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 0;
+            color: #374151;
+        }
+
+        .point-marker {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #ef4444;
+            color: white;
+            font-weight: 600;
+            font-size: 11px;
+            flex-shrink: 0;
+        }
+
+        .point-item.temp .point-marker {
+            background: #eab308;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #e5e7eb;
+            border-top-color: #4f46e5;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>📍 地點地圖顯示</h1>
+        <p>選擇地點在地圖上顯示</p>
+    </header>
+
+    <div class="container">
+        <!-- 左邊：地點選擇 -->
+        <div class="panel">
+            <h2>地點選擇</h2>
+            <div id="loadingMessage" class="loading">
+                <span class="spinner"></span>載入中...
+            </div>
+            <div id="locationList" class="location-list"></div>
+
+            <div class="divider"></div>
+
+            <!-- 臨時地點 -->
+            <div id="tempSection" class="temp-section" style="display: none;">
+                <h3>臨時地點</h3>
+                <div id="tempPoints" class="temp-points"></div>
+            </div>
+
+            <!-- 新增臨時地點 -->
+            <div id="tempForm" style="display: none;">
+                <div class="form-group">
+                    <label>地點名稱 *</label>
+                    <input type="text" id="tempName" placeholder="例如：臨時客戶">
+                </div>
+                <div class="form-group">
+                    <label>地址或座標 *</label>
+                    <textarea id="tempAddress" placeholder="例如：東京都渋谷区1-1-1 或 34.677556, 135.506750"></textarea>
+                    <div class="form-hint">支援地址、DMS 座標或十進位座標</div>
+                </div>
+                <div id="tempError" class="form-error" style="display: none;"></div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button class="btn btn-primary" onclick="addTempPoint()">新增</button>
+                    <button class="btn btn-secondary" onclick="toggleTempForm()">取消</button>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" id="addTempBtn" onclick="toggleTempForm()">+ 新增臨時地點</button>
+
+            <div class="stats">
+                已選擇 <strong id="selectedCount">0</strong> 個地點
+            </div>
+        </div>
+
+        <!-- 右邊：地圖 -->
+        <div>
+            <div id="map"></div>
+            <div class="map-info">
+                <h3>顯示的地點</h3>
+                <div id="mapPoints" class="point-list">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📌</div>
+                        <p>選擇地點後，地圖會顯示位置</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== 配置 ==========
+        const CONFIG = {
+            notionDatabaseId: '3d75bfd83387806b882bfdeb4ca2e7e9',
+            cloudflareWorkerUrl: 'https://throbbing-feather-5f4c.zaxwei180jp.workers.dev',
+        };
+
+        // ========== 全局狀態 ==========
+        let allLocations = [];
+        let selectedLocations = [];
+        let tempPoints = [];
+        let map = null;
+        let markers = [];
+        let infoWindows = [];
+
+        // ========== 初始化 ==========
+        async function init() {
+            await loadLocations();
+            initMap();
+            renderLocations();
+        }
+
+        // ========== 載入位置 ==========
+        async function loadLocations() {
+            try {
+                const response = await fetch(
+                    `${CONFIG.cloudflareWorkerUrl}?databaseId=${CONFIG.notionDatabaseId}`
+                );
+                const data = await response.json();
+                allLocations = data;
+                document.getElementById('loadingMessage').style.display = 'none';
+            } catch (error) {
+                console.error('Error loading locations:', error);
+                document.getElementById('loadingMessage').innerHTML = '❌ 無法載入地點。檢查 Worker 網址是否正確。';
+            }
+        }
+
+        // ========== 初始化地圖 ==========
+        function initMap() {
+            if (allLocations.length === 0) {
+                map = new google.maps.Map(document.getElementById('map'), {
+                    zoom: 12,
+                    center: { lat: 35.6762, lng: 139.6503 }, // 東京預設位置
+                });
+                return;
+            }
+
+            const centerLat = allLocations.reduce((sum, loc) => sum + loc.lat, 0) / allLocations.length;
+            const centerLng = allLocations.reduce((sum, loc) => sum + loc.lng, 0) / allLocations.length;
+
+            map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 12,
+                center: { lat: centerLat, lng: centerLng },
+                mapTypeId: google.maps.MapTypeId.ROADMAP,
+            });
+        }
+
+        // ========== 顯示地點列表 ==========
+        function renderLocations() {
+            const listDiv = document.getElementById('locationList');
+            listDiv.innerHTML = '';
+
+            if (allLocations.length === 0) {
+                listDiv.innerHTML = '<div class="empty-state"><p>沒有地點</p></div>';
+                return;
+            }
+
+            allLocations.forEach(loc => {
+                const checked = selectedLocations.find(s => s.id === loc.id);
+                const item = document.createElement('label');
+                item.className = 'location-item';
+                item.innerHTML = `
+                    <input type="checkbox" ${checked ? 'checked' : ''} 
+                           onchange="toggleLocation('${loc.id}', '${loc.code}', '${loc.name}', ${loc.lat}, ${loc.lng})">
+                    <div class="location-info">
+                        <div class="name">${loc.code} - ${loc.name}</div>
+                        <div class="address">${loc.address}</div>
+                    </div>
+                `;
+                listDiv.appendChild(item);
+            });
+        }
+
+        // ========== 切換地點選擇 ==========
+        function toggleLocation(id, code, name, lat, lng) {
+            const existing = selectedLocations.find(s => s.id === id);
+            if (existing) {
+                selectedLocations = selectedLocations.filter(s => s.id !== id);
+            } else {
+                selectedLocations.push({ id, code, name, lat, lng, isTemp: false });
+            }
+            updateDisplay();
+        }
+
+        // ========== 新增臨時地點 ==========
+        function toggleTempForm() {
+            const form = document.getElementById('tempForm');
+            const btn = document.getElementById('addTempBtn');
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+            btn.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function addTempPoint() {
+            const name = document.getElementById('tempName').value.trim();
+            const address = document.getElementById('tempAddress').value.trim();
+            const errorDiv = document.getElementById('tempError');
+
+            errorDiv.style.display = 'none';
+            errorDiv.textContent = '';
+
+            if (!name || !address) {
+                errorDiv.textContent = '❌ 請輸入名稱和地址';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const coords = parseCoordinates(address);
+                const tempId = `temp-${Date.now()}`;
+
+                tempPoints.push({
+                    id: tempId,
+                    name,
+                    lat: coords.lat,
+                    lng: coords.lng,
+                    isTemp: true,
+                });
+
+                selectedLocations.push({
+                    id: tempId,
+                    name,
+                    lat: coords.lat,
+                    lng: coords.lng,
+                    isTemp: true,
+                });
+
+                document.getElementById('tempName').value = '';
+                document.getElementById('tempAddress').value = '';
+                toggleTempForm();
+                updateDisplay();
+            } catch (error) {
+                errorDiv.textContent = `❌ ${error.message}`;
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        function removeTempPoint(id) {
+            tempPoints = tempPoints.filter(p => p.id !== id);
+            selectedLocations = selectedLocations.filter(p => p.id !== id);
+            updateDisplay();
+        }
+
+        // ========== 座標解析 ==========
+        function parseCoordinates(input) {
+            // DMS 格式檢查
+            if (input.includes('°') || input.includes('º')) {
+                return parseDMS(input);
+            }
+
+            // 十進位格式
+            const parts = input.split(/[,\s]+/).filter(p => p.trim());
+            if (parts.length >= 2) {
+                const lat = parseFloat(parts[0]);
+                const lng = parseFloat(parts[1]);
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    return { lat, lng };
+                }
+            }
+
+            throw new Error('無法解析座標。支援格式：地址、DMS（34°40\'39.2"N）或十進位（34.677556, 135.506750）');
+        }
+
+        function parseDMS(input) {
+            const dmsRegex = /(\d+\.?\d*)[°º][\s]?(\d+\.?\d*)[\'′][\s]?(\d+\.?\d*)[\"″][\s]?([NSEW])/gi;
+            const matches = [...input.matchAll(dmsRegex)];
+
+            if (matches.length < 2) {
+                throw new Error('DMS 格式不正確。例如：34°40\'39.2"N 135°30\'24.3"E');
+            }
+
+            const lat = dmsToDecimal(parseFloat(matches[0][1]), parseFloat(matches[0][2]), parseFloat(matches[0][3]), matches[0][4]);
+            const lng = dmsToDecimal(parseFloat(matches[1][1]), parseFloat(matches[1][2]), parseFloat(matches[1][3]), matches[1][4]);
+
+            return { lat, lng };
+        }
+
+        function dmsToDecimal(degrees, minutes, seconds, direction) {
+            let decimal = degrees + minutes / 60 + seconds / 3600;
+            if (direction === 'S' || direction === 'W') {
+                decimal = -decimal;
+            }
+            return decimal;
+        }
+
+        // ========== 更新顯示 ==========
+        function updateDisplay() {
+            updateStats();
+            updateTempSection();
+            updateMap();
+            updateMapPoints();
+        }
+
+        function updateStats() {
+            document.getElementById('selectedCount').textContent = selectedLocations.length + tempPoints.length;
+        }
+
+        function updateTempSection() {
+            const section = document.getElementById('tempSection');
+            if (tempPoints.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+            const container = document.getElementById('tempPoints');
+            container.innerHTML = tempPoints.map(point => `
+                <div class="temp-point">
+                    <div>
+                        <div class="temp-point-name">${point.name}</div>
+                        <div class="temp-point-coords">${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}</div>
+                    </div>
+                    <button class="btn-remove" onclick="removeTempPoint('${point.id}')">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function updateMap() {
+            // 清除舊標記
+            markers.forEach(marker => marker.setMap(null));
+            infoWindows.forEach(iw => iw.close());
+            markers = [];
+            infoWindows = [];
+
+            if (selectedLocations.length === 0) {
+                return;
+            }
+
+            // 計算邊界
+            const bounds = new google.maps.LatLngBounds();
+
+            selectedLocations.forEach((loc, index) => {
+                const position = { lat: loc.lat, lng: loc.lng };
+                bounds.extend(position);
+
+                const marker = new google.maps.Marker({
+                    position,
+                    map,
+                    title: loc.name,
+                    label: String(index + 1),
+                    icon: loc.isTemp
+                        ? 'http://maps.google.com/mapfiles/ms/icons/yellow-dot.png'
+                        : 'http://maps.google.com/mapfiles/ms/icons/red-dot.png',
+                });
+
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `
+                        <div style="padding: 10px; font-size: 13px;">
+                            <strong>${loc.name}</strong>
+                            <div style="margin-top: 5px; color: #666; font-size: 12px;">
+                                ${loc.lat.toFixed(6)}, ${loc.lng.toFixed(6)}
+                            </div>
+                            ${loc.isTemp ? '<div style="color: #b8860b; font-size: 11px; margin-top: 5px;">臨時地點</div>' : ''}
+                        </div>
+                    `,
+                });
+
+                marker.addListener('click', () => {
+                    infoWindows.forEach(iw => iw.close());
+                    infoWindow.open(map, marker);
+                });
+
+                if (index === 0) {
+                    infoWindow.open(map, marker);
+                }
+
+                markers.push(marker);
+                infoWindows.push(infoWindow);
+            });
+
+            map.fitBounds(bounds);
+        }
+
+        function updateMapPoints() {
+            const container = document.getElementById('mapPoints');
+
+            if (selectedLocations.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📌</div>
+                        <p>選擇地點後，地圖會顯示位置</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = selectedLocations.map((loc, index) => `
+                <div class="point-item ${loc.isTemp ? 'temp' : ''}">
+                    <div class="point-marker">${index + 1}</div>
+                    <span>${loc.name}</span>
+                    ${loc.isTemp ? '<span style="font-size: 11px; background: #fcd34d; color: #78350f; padding: 2px 6px; border-radius: 3px;">臨時</span>' : ''}
+                </div>
+            `).join('');
+        }
+
+        // 頁面載入時初始化
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
