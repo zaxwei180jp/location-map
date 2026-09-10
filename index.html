@@ -33,12 +33,13 @@
         }
 
         .header-btn {
-            padding: 10px 20px;
+            padding: 12px 24px;
             background: #10b981;
             color: white;
             border: none;
             border-radius: 6px;
             font-weight: 600;
+            font-size: 15px;
             cursor: pointer;
         }
 
@@ -118,14 +119,14 @@
 
         .btn {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             border: none;
             border-radius: 6px;
             font-weight: 600;
             cursor: pointer;
             transition: background 0.2s;
-            font-size: 14px;
-            margin-bottom: 10px;
+            font-size: 15px;
+            margin-bottom: 12px;
         }
 
         .btn-primary {
@@ -138,24 +139,24 @@
         }
 
         .form-group {
-            margin-bottom: 12px;
+            margin-bottom: 16px;
         }
 
         .form-group label {
             display: block;
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 600;
             color: #374151;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
 
         .form-group input,
         .form-group textarea {
             width: 100%;
-            padding: 8px;
+            padding: 10px;
             border: 1px solid #d1d5db;
             border-radius: 4px;
-            font-size: 13px;
+            font-size: 14px;
             font-family: inherit;
         }
 
@@ -210,10 +211,10 @@
         .modal-content {
             background: white;
             border-radius: 8px;
-            padding: 30px;
-            max-width: 900px;
-            width: 90%;
-            max-height: 90vh;
+            padding: 40px;
+            max-width: 1200px;
+            width: 95%;
+            max-height: 95vh;
             overflow-y: auto;
         }
 
@@ -221,18 +222,18 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
 
         .modal-header h2 {
-            font-size: 24px;
+            font-size: 28px;
             color: #111;
         }
 
         .modal-close {
             background: none;
             border: none;
-            font-size: 24px;
+            font-size: 28px;
             cursor: pointer;
             color: #666;
         }
@@ -240,16 +241,17 @@
         .tabs {
             display: flex;
             gap: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
             border-bottom: 1px solid #e5e7eb;
         }
 
         .tab-btn {
-            padding: 12px 20px;
+            padding: 14px 24px;
             background: none;
             border: none;
             cursor: pointer;
             font-weight: 600;
+            font-size: 15px;
             color: #666;
             border-bottom: 3px solid transparent;
             transition: all 0.2s;
@@ -271,24 +273,24 @@
         .location-row {
             display: grid;
             grid-template-columns: 1fr 1.5fr 1.5fr 1fr 1fr auto auto;
-            gap: 8px;
-            padding: 12px;
+            gap: 12px;
+            padding: 16px;
             border: 1px solid #e5e7eb;
             border-radius: 6px;
-            margin-bottom: 10px;
+            margin-bottom: 14px;
             align-items: center;
         }
 
         .location-row input {
-            padding: 6px;
+            padding: 10px;
             border: 1px solid #d1d5db;
             border-radius: 4px;
-            font-size: 12px;
+            font-size: 14px;
         }
 
         .btn-small {
-            padding: 6px 12px;
-            font-size: 12px;
+            padding: 8px 16px;
+            font-size: 13px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
@@ -318,20 +320,20 @@
         .bulk-row {
             display: grid;
             grid-template-columns: 1fr 1.5fr 1.5fr 1fr 1fr auto;
-            gap: 10px;
-            padding: 12px;
+            gap: 12px;
+            padding: 16px;
             border: 1px solid #d1d5db;
             border-radius: 6px;
-            margin-bottom: 12px;
+            margin-bottom: 14px;
             background: #fafafa;
             align-items: center;
         }
 
         .bulk-row input {
-            padding: 8px;
+            padding: 10px;
             border: 1px solid #d1d5db;
             border-radius: 4px;
-            font-size: 13px;
+            font-size: 14px;
         }
 
         .bulk-row input:focus {
@@ -341,14 +343,14 @@
         }
 
         .btn-remove-bulk {
-            padding: 6px 12px;
+            padding: 8px 16px;
             background: #ef4444;
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             font-weight: 600;
-            font-size: 12px;
+            font-size: 13px;
         }
 
         .btn-remove-bulk:hover {
@@ -467,14 +469,25 @@
         }
 
         function getNextCode() {
-            if (allLocations.length === 0) return 'LC001';
+            let allCodes = [];
             
-            const codes = allLocations.map(loc => {
+            // 从已保存的地点中获取
+            allCodes = allCodes.concat(allLocations.map(loc => {
                 const match = loc.code.match(/LC(\d+)/);
                 return match ? parseInt(match[1]) : 0;
+            }));
+            
+            // 从表单中获取已有的 code
+            const rows = document.querySelectorAll('.bulk-row input[data-field="code"]');
+            rows.forEach(input => {
+                const match = input.value.match(/LC(\d+)/);
+                if (match) {
+                    allCodes.push(parseInt(match[1]));
+                }
             });
             
-            const maxCode = Math.max(...codes, 0);
+            // 找最大的 code
+            const maxCode = Math.max(...allCodes, 0);
             const nextNum = (maxCode + 1).toString().padStart(3, '0');
             return `LC${nextNum}`;
         }
