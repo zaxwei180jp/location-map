@@ -538,11 +538,18 @@
             const listDiv = document.getElementById('locationList');
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             
-            const filtered = allLocations.filter(loc => 
+            let filtered = allLocations.filter(loc => 
                 loc.name.toLowerCase().includes(searchTerm) ||
                 loc.code.toLowerCase().includes(searchTerm) ||
                 loc.address.toLowerCase().includes(searchTerm)
             );
+
+            // 按 code 升序排序（LC001 < LC002 < LC003...）
+            filtered.sort((a, b) => {
+                const numA = parseInt(a.code.match(/\d+/)?.[0] || 0);
+                const numB = parseInt(b.code.match(/\d+/)?.[0] || 0);
+                return numA - numB;
+            });
 
             listDiv.innerHTML = '';
 
