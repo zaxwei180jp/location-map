@@ -315,6 +315,46 @@
             font-size: 12px;
         }
 
+        .bulk-row {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr 1.5fr 1fr 1fr auto;
+            gap: 10px;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            background: #fafafa;
+            align-items: center;
+        }
+
+        .bulk-row input {
+            padding: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .bulk-row input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .btn-remove-bulk {
+            padding: 6px 12px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .btn-remove-bulk:hover {
+            background: #dc2626;
+        }
+
         .loading {
             text-align: center;
             padding: 20px;
@@ -341,6 +381,9 @@
                 grid-template-columns: 1fr;
             }
             .location-row {
+                grid-template-columns: 1fr;
+            }
+            .bulk-row {
                 grid-template-columns: 1fr;
             }
         }
@@ -393,12 +436,9 @@
 
             <!-- Bulk Tab -->
             <div id="bulk" class="tab-content">
-                <div class="form-group">
-                    <label>Paste locations (code|name|address|type|notes per line):</label>
-                    <textarea id="bulkData" class="bulk-textarea" placeholder="LC002|Store 1|Tokyo|Customer|Opening soon
-LC003|Store 2|Osaka|Warehouse|Reserved parking"></textarea>
-                </div>
-                <button class="btn btn-primary" onclick="importBulk()">Import</button>
+                <button class="btn btn-primary" style="margin-bottom: 15px;" onclick="addBulkRow()">+ Add Location</button>
+                <div id="bulkRows"></div>
+                <button class="btn btn-primary" onclick="saveBulkLocations()">Import All</button>
             </div>
         </div>
     </div>
@@ -538,6 +578,10 @@ LC003|Store 2|Osaka|Warehouse|Reserved parking"></textarea>
             
             document.getElementById(tab).classList.add('active');
             event.target.classList.add('active');
+
+            if (tab === 'bulk' && document.getElementById('bulkRows').children.length === 0) {
+                addBulkRow();
+            }
         }
 
         function renderEditList() {
@@ -608,23 +652,57 @@ LC003|Store 2|Osaka|Warehouse|Reserved parking"></textarea>
             }
         }
 
-        async function importBulk() {
-            const data = document.getElementById('bulkData').value.trim();
+        let bulkRowCount = 0;
 
-            if (!data) {
-                alert('Please paste data');
+        function addBulkRow() {
+            const id = `bulk-${bulkRowCount++}`;
+            const container = document.getElementById('bulkRows');
+            
+            const row = document.createElement('div');
+            row.className = 'bulk-row';
+            row.id = id;
+            row.innerHTML = `
+                <input type="text" placeholder="Code" data-field="code">
+                <input type="text" placeholder="Name" data-field="name">
+                <input type="text" placeholder="Address" data-field="address">
+                <input type="text" placeholder="Type" data-field="type">
+                <input type="text" placeholder="Notes" data-field="notes">
+                <button class="btn-remove-bulk" onclick="removeBulkRow('${id}')">Remove</button>
+            `;
+            
+            container.appendChild(row);
+        }
+
+        function removeBulkRow(id) {
+            const row = document.getElementById(id);
+            if (row) {
+                row.remove();
+            }
+        }
+
+        async function saveBulkLocations() {
+            const rows = document.querySelectorAll('.bulk-row');
+            
+            if (rows.length === 0) {
+                alert('Please add at least one location');
                 return;
             }
 
-            const lines = data.split('\n').filter(l => l.trim());
             let success = 0;
             let failed = 0;
 
-            for (const line of lines) {
-                const parts = line.split('|').map(p => p.trim());
-                if (parts.length < 3) continue;
+            for (const row of rows) {
+                const inputs = row.querySelectorAll('input');
+                const data = {};
+                inputs.forEach(input => {
+                    const field = input.getAttribute('data-field');
+                    data[field] = input.value.trim();
+                });
 
-                const [code, name, address, type, notes] = parts;
+                if (!data.name || !data.address) {
+                    failed++;
+                    continue;
+                }
 
                 try {
                     const response = await fetch(
@@ -632,26 +710,35 @@ LC003|Store 2|Osaka|Warehouse|Reserved parking"></textarea>
                         {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ code, name, address, type, notes }),
+                            body: JSON.stringify({
+                                code: data.code || '',
+                                name: data.name,
+                                address: data.address,
+                                type: data.type || '',
+                                notes: data.notes || ''
+                            }),
                         }
                     );
 
                     if (response.ok) {
                         success++;
+                        row.style.background = '#d1fae5';
                     } else {
                         failed++;
+                        row.style.background = '#fee2e2';
                     }
                 } catch (error) {
                     failed++;
+                    row.style.background = '#fee2e2';
                 }
             }
 
             alert(`Import complete! Success: ${success}, Failed: ${failed}`);
 
-            document.getElementById('bulkData').value = '';
-
-            await loadLocations();
-            renderLocations();
+            if (success > 0) {
+                await loadLocations();
+                renderLocations();
+            }
         }
 
         window.addEventListener('load', init);
