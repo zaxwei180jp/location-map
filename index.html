@@ -296,6 +296,22 @@
             min-width: 0;
         }
 
+        .location-row select {
+            padding: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 12px;
+            min-width: 0;
+            background-color: white;
+            cursor: pointer;
+        }
+
+        .location-row select:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
         .bulk-row {
             display: grid;
             grid-template-columns: 0.8fr 1.2fr 1.2fr 0.8fr 0.8fr auto;
@@ -318,6 +334,22 @@
         }
 
         .bulk-row input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .bulk-row select {
+            padding: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 12px;
+            min-width: 0;
+            background-color: white;
+            cursor: pointer;
+        }
+
+        .bulk-row select:focus {
             outline: none;
             border-color: #4f46e5;
             box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
@@ -392,11 +424,72 @@
             .container {
                 grid-template-columns: 1fr;
             }
-            .location-row {
-                grid-template-columns: 1fr;
+        }
+
+        @media (max-width: 768px) {
+            .modal-content {
+                padding: 20px;
+                max-width: 100%;
             }
+
+            .location-row {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                min-width: auto;
+            }
+
+            .location-row input {
+                width: 100%;
+            }
+
             .bulk-row {
-                grid-template-columns: 1fr;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                min-width: auto;
+            }
+
+            .bulk-row input {
+                width: 100%;
+            }
+
+            .location-row select,
+            .bulk-row select {
+                width: 100%;
+            }
+
+            .btn-small,
+            .btn-remove-bulk {
+                width: 100%;
+            }
+
+            #editList, #bulkRows {
+                overflow-x: visible;
+                padding-right: 0;
+            }
+
+            .tabs {
+                gap: 5px;
+            }
+
+            .tab-btn {
+                padding: 10px 12px;
+                font-size: 13px;
+            }
+
+            .modal-header h2 {
+                font-size: 20px;
+            }
+
+            .form-group label {
+                font-size: 12px;
+            }
+
+            .form-group input,
+            .form-group textarea {
+                padding: 8px;
+                font-size: 13px;
             }
         }
     </style>
@@ -653,8 +746,17 @@
             }
         }
 
+        function getTypeOptions() {
+            const types = new Set();
+            allLocations.forEach(loc => {
+                if (loc.type) types.add(loc.type);
+            });
+            return Array.from(types).sort();
+        }
+
         function renderEditList() {
             const listDiv = document.getElementById('editList');
+            const typeOptions = getTypeOptions();
             
             // 按 code 升序排序
             const sorted = [...allLocations].sort((a, b) => {
@@ -668,11 +770,15 @@
             sorted.forEach(loc => {
                 const row = document.createElement('div');
                 row.className = 'location-row';
+                const typeSelectOptions = typeOptions.map(t => `<option value="${t}" ${t === loc.type ? 'selected' : ''}>${t}</option>`).join('');
                 row.innerHTML = `
                     <input type="text" id="code-${loc.id}" value="${loc.code}" placeholder="Code">
                     <input type="text" id="name-${loc.id}" value="${loc.name}" placeholder="Name">
                     <input type="text" id="addr-${loc.id}" value="${loc.address}" placeholder="Address">
-                    <input type="text" id="type-${loc.id}" value="${loc.type}" placeholder="Type">
+                    <select id="type-${loc.id}" data-field="type">
+                        <option value="">-- Select Type --</option>
+                        ${typeSelectOptions}
+                    </select>
                     <input type="text" id="notes-${loc.id}" value="${loc.notes}" placeholder="Notes">
                     <button class="btn-small btn-edit" onclick="editLocation('${loc.id}')">Save</button>
                     <button class="btn-small btn-delete" onclick="deleteLocation('${loc.id}')">Delete</button>
@@ -735,6 +841,8 @@
             const id = `bulk-${bulkRowCount++}`;
             const container = document.getElementById('bulkRows');
             const nextCode = getNextCode();
+            const typeOptions = getTypeOptions();
+            const typeSelectOptions = typeOptions.map(t => `<option value="${t}">${t}</option>`).join('');
             
             const row = document.createElement('div');
             row.className = 'bulk-row';
@@ -743,7 +851,10 @@
                 <input type="text" placeholder="Code" data-field="code" value="${nextCode}">
                 <input type="text" placeholder="Name" data-field="name">
                 <input type="text" placeholder="Address" data-field="address">
-                <input type="text" placeholder="Type" data-field="type">
+                <select data-field="type">
+                    <option value="">-- Select Type --</option>
+                    ${typeSelectOptions}
+                </select>
                 <input type="text" placeholder="Notes" data-field="notes">
                 <button class="btn-remove-bulk" onclick="removeBulkRow('${id}')">Remove</button>
             `;
@@ -771,10 +882,17 @@
 
             for (const row of rows) {
                 const inputs = row.querySelectorAll('input');
+                const selects = row.querySelectorAll('select');
                 const data = {};
+                
                 inputs.forEach(input => {
                     const field = input.getAttribute('data-field');
                     data[field] = input.value.trim();
+                });
+
+                selects.forEach(select => {
+                    const field = select.getAttribute('data-field');
+                    data[field] = select.value.trim();
                 });
 
                 if (!data.name || !data.address) {
