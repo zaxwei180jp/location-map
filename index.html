@@ -71,6 +71,59 @@
             margin-bottom: 15px;
         }
 
+        .location-group {
+            margin-bottom: 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+        }
+
+        .location-group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: #f3f4f6;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+            font-weight: 600;
+            font-size: 14px;
+            color: #1f2937;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .location-group-header:hover {
+            background: #e5e7eb;
+        }
+
+        .group-title {
+            flex: 1;
+        }
+
+        .group-count {
+            background: #4f46e5;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .location-group-items {
+            padding: 8px;
+            max-height: 500px;
+            overflow-y: auto;
+            transition: max-height 0.3s;
+        }
+
+        .location-group-items.hidden {
+            max-height: 0;
+            overflow: hidden;
+            padding: 0;
+        }
+
         .location-item {
             display: flex;
             align-items: flex-start;
@@ -79,7 +132,7 @@
             border-radius: 6px;
             cursor: pointer;
             transition: background 0.2s;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .location-item:hover {
@@ -427,6 +480,32 @@
         }
 
         @media (max-width: 768px) {
+            .location-group {
+                margin-bottom: 12px;
+            }
+
+            .location-group-header {
+                padding: 10px 12px;
+                font-size: 13px;
+            }
+
+            .group-count {
+                padding: 2px 6px;
+                font-size: 11px;
+            }
+
+            .location-item {
+                padding: 8px;
+            }
+
+            .location-info .name {
+                font-size: 13px;
+            }
+
+            .location-info .address {
+                font-size: 11px;
+            }
+
             .modal-content {
                 padding: 20px;
                 max-width: 100%;
@@ -641,37 +720,80 @@
             let filtered = allLocations.filter(loc => 
                 loc.name.toLowerCase().includes(searchTerm) ||
                 loc.code.toLowerCase().includes(searchTerm) ||
-                loc.address.toLowerCase().includes(searchTerm)
+                loc.address.toLowerCase().includes(searchTerm) ||
+                loc.type.toLowerCase().includes(searchTerm)
             );
 
-            // 按 code 升序排序（LC001 < LC002 < LC003...）
-            filtered.sort((a, b) => {
-                const numA = parseInt(a.code.match(/\d+/)?.[0] || 0);
-                const numB = parseInt(b.code.match(/\d+/)?.[0] || 0);
-                return numA - numB;
+            // 按 type 分组
+            const grouped = {};
+            filtered.forEach(loc => {
+                const type = loc.type || 'Others';
+                if (!grouped[type]) {
+                    grouped[type] = [];
+                }
+                grouped[type].push(loc);
             });
+
+            // 按 type 名称排序
+            const sortedTypes = Object.keys(grouped).sort();
 
             listDiv.innerHTML = '';
 
-            if (filtered.length === 0) {
+            if (sortedTypes.length === 0) {
                 listDiv.innerHTML = '<div class="empty-state"><p>No locations found</p></div>';
                 return;
             }
 
-            filtered.forEach(loc => {
-                const checked = selectedLocations.find(s => s.id === loc.id);
-                const item = document.createElement('label');
-                item.className = 'location-item';
-                item.innerHTML = `
-                    <input type="checkbox" ${checked ? 'checked' : ''} 
-                           onchange="toggleLocation('${loc.id}', '${loc.code}', '${loc.name}', ${loc.lat}, ${loc.lng})">
-                    <div class="location-info">
-                        <div class="name">${loc.code} - ${loc.name} ${loc.type ? `[${loc.type}]` : ''}</div>
-                        <div class="address">${loc.address} ${loc.notes ? `• ${loc.notes}` : ''}</div>
-                    </div>
+            sortedTypes.forEach(type => {
+                // 分类标题
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'location-group';
+                const groupId = `group-${type}`;
+                
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'location-group-header';
+                headerDiv.innerHTML = `
+                    <span class="group-title">${type}</span>
+                    <span class="group-count">${grouped[type].length}</span>
                 `;
-                listDiv.appendChild(item);
+                headerDiv.onclick = () => toggleGroup(groupId);
+                
+                groupDiv.appendChild(headerDiv);
+
+                // 分类下的地点
+                const itemsDiv = document.createElement('div');
+                itemsDiv.className = 'location-group-items';
+                itemsDiv.id = groupId;
+
+                grouped[type].sort((a, b) => {
+                    const numA = parseInt(a.code.match(/\d+/)?.[0] || 0);
+                    const numB = parseInt(b.code.match(/\d+/)?.[0] || 0);
+                    return numA - numB;
+                }).forEach(loc => {
+                    const checked = selectedLocations.find(s => s.id === loc.id);
+                    const item = document.createElement('label');
+                    item.className = 'location-item';
+                    item.innerHTML = `
+                        <input type="checkbox" ${checked ? 'checked' : ''} 
+                               onchange="toggleLocation('${loc.id}', '${loc.code}', '${loc.name}', ${loc.lat}, ${loc.lng})">
+                        <div class="location-info">
+                            <div class="name">${loc.code} - ${loc.name}</div>
+                            <div class="address">${loc.address} ${loc.notes ? `• ${loc.notes}` : ''}</div>
+                        </div>
+                    `;
+                    itemsDiv.appendChild(item);
+                });
+
+                groupDiv.appendChild(itemsDiv);
+                listDiv.appendChild(groupDiv);
             });
+        }
+
+        function toggleGroup(groupId) {
+            const group = document.getElementById(groupId);
+            if (group) {
+                group.classList.toggle('hidden');
+            }
         }
 
         function toggleLocation(id, code, name, lat, lng) {
