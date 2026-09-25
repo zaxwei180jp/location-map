@@ -13,138 +13,126 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #f3f4f6;
-        }
-
-        header {
-            background: white;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            padding: 20px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        header h1 {
-            font-size: 28px;
-            color: #111;
-        }
-
-        .header-btn {
-            padding: 12px 24px;
-            background: #10b981;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 15px;
-            cursor: pointer;
-        }
-
-        .header-btn:hover {
-            background: #059669;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #f5f5f5;
         }
 
         .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 20px 20px;
-            display: grid;
-            grid-template-columns: 1fr 3fr;
-            gap: 20px;
+            display: flex;
+            height: 100vh;
         }
 
-        .panel {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        .sidebar {
+            width: 400px;
+            background-color: white;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .sidebar-header {
             padding: 20px;
-            max-height: 80vh;
-            overflow-y: auto;
+            border-bottom: 1px solid #e0e0e0;
         }
 
-        .panel h2 {
-            font-size: 18px;
-            color: #111;
-            margin-bottom: 15px;
+        .sidebar-header h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .sidebar-header p {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .search-container {
+            padding: 12px 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #5856d6;
+            box-shadow: 0 0 0 3px rgba(88, 86, 214, 0.1);
+        }
+
+        .location-list-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0;
+        }
+
+        .location-list {
+            padding: 0;
         }
 
         .location-group {
-            margin-bottom: 16px;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            overflow: hidden;
-            background: white;
+            border-bottom: 1px solid #f0f0f0;
         }
 
         .location-group-header {
+            padding: 12px 20px;
+            background-color: #f9f9f9;
+            cursor: pointer;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 16px;
-            background: #f3f4f6;
-            cursor: pointer;
             user-select: none;
-            transition: background 0.2s;
-            font-weight: 600;
-            font-size: 14px;
-            color: #1f2937;
-            border-bottom: 1px solid #e5e7eb;
+            transition: background-color 0.2s;
         }
 
         .location-group-header:hover {
-            background: #e5e7eb;
+            background-color: #f0f0f0;
         }
 
         .group-title {
-            flex: 1;
+            font-weight: 600;
+            color: #333;
+            font-size: 15px;
         }
 
         .group-count {
-            background: #4f46e5;
-            color: white;
+            background-color: #e0e0e0;
+            color: #666;
             padding: 2px 8px;
             border-radius: 12px;
             font-size: 12px;
-            font-weight: 600;
         }
 
         .location-group-items {
-            padding: 8px;
-            max-height: 500px;
-            overflow-y: auto;
-            transition: max-height 0.3s;
-        }
-
-        .location-group-items.hidden {
-            max-height: 0;
-            overflow: hidden;
-            padding: 0;
+            background-color: white;
         }
 
         .location-item {
             display: flex;
             align-items: flex-start;
-            gap: 10px;
-            padding: 10px;
-            border-radius: 6px;
+            padding: 12px 20px;
+            border-bottom: 1px solid #f5f5f5;
             cursor: pointer;
-            transition: background 0.2s;
-            margin-bottom: 6px;
+            transition: background-color 0.15s;
         }
 
         .location-item:hover {
-            background: #f9fafb;
+            background-color: #f9f9f9;
         }
 
         .location-item input[type="checkbox"] {
+            margin-top: 4px;
+            margin-right: 12px;
             width: 18px;
             height: 18px;
-            margin-top: 2px;
             cursor: pointer;
-            accent-color: #4f46e5;
+            flex-shrink: 0;
         }
 
         .location-info {
@@ -153,94 +141,80 @@
         }
 
         .location-info .name {
-            font-weight: 600;
-            color: #111;
+            font-weight: 500;
+            color: #333;
             font-size: 14px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            margin-bottom: 4px;
         }
 
         .location-info .address {
             font-size: 12px;
             color: #666;
-            margin-top: 2px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            line-height: 1.4;
+            word-break: break-word;
         }
 
-        .btn {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-            font-size: 15px;
-            margin-bottom: 12px;
-        }
-
-        .btn-primary {
-            background: #4f46e5;
+        .view-map-btn {
+            display: inline-block;
+            margin-top: 6px;
+            padding: 6px 12px;
+            background-color: #5856d6;
             color: white;
-        }
-
-        .btn-primary:hover {
-            background: #4338ca;
-        }
-
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 6px;
-        }
-
-        .form-group input,
-        .form-group textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #d1d5db;
+            border: none;
             border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .view-map-btn:hover {
+            background-color: #4741c4;
+        }
+
+        .empty-state {
+            padding: 40px 20px;
+            text-align: center;
+            color: #999;
             font-size: 14px;
-            font-family: inherit;
         }
 
-        .form-group input:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #4f46e5;
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        }
-
-        .stats {
-            font-size: 13px;
-            color: #666;
-            padding-top: 15px;
-            border-top: 1px solid #e5e7eb;
-            margin-top: 15px;
+        .map-container {
+            flex: 1;
+            position: relative;
         }
 
         #map {
             width: 100%;
-            height: 600px;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            height: 100%;
         }
 
-        .map-info {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            padding: 15px;
-            margin-top: 15px;
+        .button-group {
+            padding: 15px 20px;
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid #e0e0e0;
+            background-color: #f9f9f9;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background-color: #5856d6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #4741c4;
         }
 
         .modal {
@@ -250,70 +224,75 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.5);
+            background-color: rgba(0,0,0,0.5);
             z-index: 1000;
-            overflow-y: auto;
-        }
-
-        .modal.active {
-            display: flex;
             align-items: center;
             justify-content: center;
         }
 
+        .modal.show {
+            display: flex;
+        }
+
         .modal-content {
-            background: white;
-            border-radius: 8px;
-            padding: 40px;
-            max-width: 1400px;
-            width: 98%;
-            max-height: 95vh;
+            background-color: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
             overflow-y: auto;
-            overflow-x: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
         }
 
         .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
+            position: sticky;
+            top: 0;
+            background-color: white;
         }
 
         .modal-header h2 {
-            font-size: 28px;
-            color: #111;
+            font-size: 18px;
+            color: #333;
         }
 
-        .modal-close {
+        .close-btn {
             background: none;
             border: none;
-            font-size: 28px;
+            font-size: 24px;
             cursor: pointer;
-            color: #666;
+            color: #999;
+        }
+
+        .modal-body {
+            padding: 20px;
         }
 
         .tabs {
             display: flex;
-            gap: 10px;
-            margin-bottom: 24px;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid #e0e0e0;
+            margin-bottom: 20px;
         }
 
-        .tab-btn {
-            padding: 14px 24px;
+        .tab {
+            padding: 10px 20px;
             background: none;
             border: none;
             cursor: pointer;
-            font-weight: 600;
-            font-size: 15px;
+            font-size: 14px;
+            font-weight: 500;
             color: #666;
-            border-bottom: 3px solid transparent;
+            border-bottom: 2px solid transparent;
             transition: all 0.2s;
         }
 
-        .tab-btn.active {
-            color: #4f46e5;
-            border-bottom-color: #4f46e5;
+        .tab.active {
+            color: #5856d6;
+            border-bottom-color: #5856d6;
         }
 
         .tab-content {
@@ -324,308 +303,256 @@
             display: block;
         }
 
-        #editList, #bulkRows {
-            overflow-x: auto;
-            padding-right: 10px;
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 6px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #5856d6;
+            box-shadow: 0 0 0 3px rgba(88, 86, 214, 0.1);
+        }
+
+        .import-textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            resize: vertical;
+        }
+
+        .import-button {
+            width: 100%;
+            padding: 12px;
+            background-color: #5856d6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .import-button:hover {
+            background-color: #4741c4;
         }
 
         .location-row {
-            display: grid;
-            grid-template-columns: 0.8fr 1.2fr 1.2fr 0.8fr 0.8fr auto auto;
-            gap: 8px;
-            padding: 14px;
-            border: 1px solid #e5e7eb;
+            border: 1px solid #ddd;
             border-radius: 6px;
+            padding: 12px;
             margin-bottom: 12px;
+            background-color: #f9f9f9;
+        }
+
+        .location-row-header {
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            min-width: 1050px;
+            margin-bottom: 8px;
         }
 
-        .location-row input {
-            padding: 8px;
-            border: 1px solid #d1d5db;
-            border-radius: 4px;
-            font-size: 12px;
-            min-width: 0;
+        .location-row-code {
+            font-weight: 600;
+            color: #333;
         }
 
-        .location-row select {
-            padding: 8px;
-            border: 1px solid #d1d5db;
-            border-radius: 4px;
-            font-size: 12px;
-            min-width: 0;
-            background-color: white;
-            cursor: pointer;
-        }
-
-        .location-row select:focus {
-            outline: none;
-            border-color: #4f46e5;
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        }
-
-        .bulk-row {
-            display: grid;
-            grid-template-columns: 0.8fr 1.2fr 1.2fr 0.8fr 0.8fr auto;
+        .edit-delete-btns {
+            display: flex;
             gap: 8px;
-            padding: 14px;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            margin-bottom: 12px;
-            background: #fafafa;
-            align-items: center;
-            min-width: 1000px;
         }
 
-        .bulk-row input {
-            padding: 8px;
-            border: 1px solid #d1d5db;
-            border-radius: 4px;
-            font-size: 12px;
-            min-width: 0;
-        }
-
-        .bulk-row input:focus {
-            outline: none;
-            border-color: #4f46e5;
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        }
-
-        .bulk-row select {
-            padding: 8px;
-            border: 1px solid #d1d5db;
-            border-radius: 4px;
-            font-size: 12px;
-            min-width: 0;
+        .small-btn {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
             background-color: white;
+            border-radius: 4px;
+            font-size: 12px;
             cursor: pointer;
+            transition: all 0.2s;
         }
 
-        .bulk-row select:focus {
-            outline: none;
-            border-color: #4f46e5;
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        .small-btn:hover {
+            background-color: #f0f0f0;
         }
 
-        .btn-remove-bulk {
-            padding: 6px 10px;
-            background: #ef4444;
+        .small-btn.delete {
+            color: #d32f2f;
+            border-color: #d32f2f;
+        }
+
+        .small-btn.delete:hover {
+            background-color: #ffebee;
+        }
+
+        .status-message {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .status-success {
+            background-color: #c8e6c9;
+            color: #2e7d32;
+        }
+
+        .status-error {
+            background-color: #ffcdd2;
+            color: #c62828;
+        }
+
+        .add-location-btn {
+            width: 100%;
+            padding: 10px;
+            background-color: #5856d6;
             color: white;
             border: none;
-            border-radius: 4px;
-            cursor: pointer;
+            border-radius: 6px;
+            font-size: 14px;
             font-weight: 600;
-            font-size: 11px;
-            white-space: nowrap;
-        }
-
-        .btn-remove-bulk:hover {
-            background: #dc2626;
-        }
-
-        .btn-small {
-            padding: 6px 10px;
-            font-size: 11px;
-            border: none;
-            border-radius: 4px;
             cursor: pointer;
-            font-weight: 600;
-            white-space: nowrap;
+            margin-bottom: 20px;
         }
 
-        .btn-edit {
-            background: #3b82f6;
-            color: white;
-        }
-
-        .btn-edit:hover {
-            background: #2563eb;
-        }
-
-        .btn-delete {
-            background: #ef4444;
-            color: white;
-        }
-
-        .btn-delete:hover {
-            background: #dc2626;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #666;
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid #e5e7eb;
-            border-top-color: #4f46e5;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-right: 8px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        @media (max-width: 1024px) {
-            .container {
-                grid-template-columns: 1fr;
-            }
+        .add-location-btn:hover {
+            background-color: #4741c4;
         }
 
         @media (max-width: 768px) {
-            .location-group {
-                margin-bottom: 12px;
+            .container {
+                flex-direction: column;
             }
 
-            .location-group-header {
-                padding: 10px 12px;
-                font-size: 13px;
+            .sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 50%;
             }
 
-            .group-count {
-                padding: 2px 6px;
-                font-size: 11px;
-            }
-
-            .location-item {
-                padding: 8px;
-            }
-
-            .location-info .name {
-                font-size: 13px;
-            }
-
-            .location-info .address {
-                font-size: 11px;
+            .map-container {
+                height: 50%;
             }
 
             .modal-content {
-                padding: 20px;
-                max-width: 100%;
+                width: 95%;
+                max-height: 80vh;
             }
+        }
 
-            .location-row {
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
-                min-width: auto;
-            }
+        .selected-count {
+            padding: 12px 20px;
+            background-color: #e8eaf6;
+            color: #3f51b5;
+            font-size: 13px;
+            font-weight: 500;
+            border-bottom: 1px solid #e0e0e0;
+        }
 
-            .location-row input {
-                width: 100%;
-            }
+        .map-button {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 10px 12px;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            font-size: 12px;
+            font-weight: 500;
+            color: #333;
+            transition: all 0.2s;
+            z-index: 10;
+        }
 
-            .bulk-row {
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
-                min-width: auto;
-            }
-
-            .bulk-row input {
-                width: 100%;
-            }
-
-            .location-row select,
-            .bulk-row select {
-                width: 100%;
-            }
-
-            .btn-small,
-            .btn-remove-bulk {
-                width: 100%;
-            }
-
-            #editList, #bulkRows {
-                overflow-x: visible;
-                padding-right: 0;
-            }
-
-            .tabs {
-                gap: 5px;
-            }
-
-            .tab-btn {
-                padding: 10px 12px;
-                font-size: 13px;
-            }
-
-            .modal-header h2 {
-                font-size: 20px;
-            }
-
-            .form-group label {
-                font-size: 12px;
-            }
-
-            .form-group input,
-            .form-group textarea {
-                padding: 8px;
-                font-size: 13px;
-            }
+        .map-button:hover {
+            background-color: #4285F4;
+            color: white;
+            border-color: #4285F4;
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>Location Map</h1>
-        <button class="header-btn" onclick="openAdminModal()">Manage Locations</button>
-    </header>
-
     <div class="container">
-        <div class="panel">
-            <h2>Select Locations</h2>
-            <div class="form-group" style="margin-bottom: 15px;">
-                <input type="text" id="searchInput" placeholder="Search locations..." style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px;">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>📍 Location Map Display</h1>
+                <p>Select locations to display</p>
             </div>
-            <div id="loadingMessage" class="loading">
-                <span class="spinner"></span>Loading...
+
+            <div class="search-container">
+                <input type="text" id="searchInput" class="search-input" placeholder="Search by name, code, address...">
             </div>
-            <div id="locationList"></div>
-            <div class="stats">
-                Selected: <strong id="selectedCount">0</strong>
+
+            <div class="selected-count">
+                <span id="selectedCount">Selected: 0 locations</span>
+            </div>
+
+            <div class="location-list-container">
+                <div class="location-list" id="locationList">
+                    <div class="empty-state"><p>Loading locations...</p></div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="openManageModal()">⚙️ Manage Locations</button>
             </div>
         </div>
 
-        <div>
+        <div class="map-container">
             <div id="map"></div>
-            <div class="map-info">
-                <h3>Displayed Locations</h3>
-                <div id="mapPoints"></div>
-            </div>
+            <button class="map-button" onclick="centerToUserLocation()">📍 My Location</button>
         </div>
     </div>
 
-    <!-- Admin Modal -->
-    <div id="adminModal" class="modal">
+    <!-- Manage Modal -->
+    <div class="modal" id="manageModal">
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Manage Locations</h2>
-                <button class="modal-close" onclick="closeAdminModal()">X</button>
+                <button class="close-btn" onclick="closeManageModal()">×</button>
             </div>
+            <div class="modal-body">
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('edit')">Edit Locations</button>
+                    <button class="tab" onclick="switchTab('import')">Import Bulk</button>
+                </div>
 
-            <div class="tabs">
-                <button class="tab-btn active" onclick="switchTab('edit')">Edit Locations</button>
-                <button class="tab-btn" onclick="switchTab('bulk')">Import Bulk</button>
-            </div>
+                <!-- Edit Tab -->
+                <div id="edit" class="tab-content active">
+                    <div id="editLocationsList"></div>
+                </div>
 
-            <!-- Edit Tab -->
-            <div id="edit" class="tab-content active">
-                <div id="editList"></div>
-            </div>
-
-            <!-- Bulk Tab -->
-            <div id="bulk" class="tab-content">
-                <button class="btn btn-primary" style="margin-bottom: 15px;" onclick="addBulkRow()">+ Add Location</button>
-                <div id="bulkRows"></div>
-                <button class="btn btn-primary" onclick="saveBulkLocations()">Import All</button>
+                <!-- Import Tab -->
+                <div id="import" class="tab-content">
+                    <div class="form-group">
+                        <label class="form-label">Paste locations (code|name|address|type|notes per line):</label>
+                        <textarea class="import-textarea" id="bulkImportText" placeholder="LC002|Store 1|Tokyo|Customer|Opening soon&#10;LC003|Store 2|Osaka|Warehouse|Reserved parking"></textarea>
+                    </div>
+                    <button class="import-button" onclick="importBulk()">Import</button>
+                    <div id="importMessage"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -638,93 +565,105 @@
 
         let allLocations = [];
         let selectedLocations = [];
-        let map = null;
-        let markers = [];
+        let map;
+        let userMarker = null;
+        let userLocation = null;
 
-        async function init() {
+        async function initMap() {
+            map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 12,
+                center: { lat: 34.6937, lng: 135.5023 },
+                styles: [
+                    { "featureType": "poi", "stylers": [{ "visibility": "off" }] }
+                ]
+            });
+
             await loadLocations();
-            initMap();
-            renderLocations();
-            document.getElementById('searchInput').addEventListener('input', () => {
-                renderLocations();
+            document.getElementById('searchInput').addEventListener('input', renderLocations);
+
+            // Request user location
+            requestUserLocation();
+        }
+
+        function requestUserLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        userLocation = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        showUserLocation();
+                    },
+                    (error) => {
+                        console.warn('Geolocation error:', error);
+                    }
+                );
+            }
+        }
+
+        function showUserLocation() {
+            if (!userLocation || !map) return;
+
+            // Remove old marker if exists
+            if (userMarker) {
+                userMarker.setMap(null);
+            }
+
+            // Create user location marker (blue circle)
+            userMarker = new google.maps.Marker({
+                position: userLocation,
+                map: map,
+                title: 'Your Location',
+                icon: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png',
+                zIndex: 1000
+            });
+
+            // Add accuracy circle
+            const accuracy = new google.maps.Circle({
+                center: userLocation,
+                map: map,
+                radius: 100,
+                fillColor: '#4285F4',
+                fillOpacity: 0.1,
+                strokeColor: '#4285F4',
+                strokeOpacity: 0.3,
+                strokeWeight: 1
             });
         }
 
-        function getNextCode() {
-            let allCodes = [];
-            
-            // 从已保存的地点中获取
-            allCodes = allCodes.concat(allLocations.map(loc => {
-                const match = loc.code.match(/LC(\d+)/);
-                return match ? parseInt(match[1]) : 0;
-            }));
-            
-            // 从表单中获取已有的 code
-            const rows = document.querySelectorAll('.bulk-row input[data-field="code"]');
-            rows.forEach(input => {
-                const match = input.value.match(/LC(\d+)/);
-                if (match) {
-                    allCodes.push(parseInt(match[1]));
-                }
-            });
-            
-            // 找最大的 code
-            const maxCode = Math.max(...allCodes, 0);
-            const nextNum = (maxCode + 1).toString().padStart(3, '0');
-            return `LC${nextNum}`;
+        function centerToUserLocation() {
+            if (userLocation && map) {
+                map.panTo(userLocation);
+                map.setZoom(15);
+            } else {
+                alert('Location not available');
+            }
         }
 
         async function loadLocations() {
             try {
-                const response = await fetch(
-                    `${CONFIG.cloudflareWorkerUrl}?databaseId=${CONFIG.notionDatabaseId}`
-                );
+                const response = await fetch(`${CONFIG.cloudflareWorkerUrl}/locations?database_id=${CONFIG.notionDatabaseId}`);
                 const data = await response.json();
-                
-                // 按 code 升序排序
-                allLocations = data.sort((a, b) => {
-                    const numA = parseInt(a.code.match(/\d+/)?.[0] || 0);
-                    const numB = parseInt(b.code.match(/\d+/)?.[0] || 0);
-                    return numA - numB;
-                });
-                
-                document.getElementById('loadingMessage').style.display = 'none';
+                allLocations = data.filter(loc => loc.enabled).sort((a, b) => a.code.localeCompare(b.code));
+                renderLocations();
             } catch (error) {
                 console.error('Error loading locations:', error);
-                document.getElementById('loadingMessage').innerHTML = 'Failed to load locations.';
+                document.getElementById('locationList').innerHTML = '<div class="empty-state"><p>Error loading locations</p></div>';
             }
-        }
-
-        function initMap() {
-            if (allLocations.length === 0) {
-                map = new google.maps.Map(document.getElementById('map'), {
-                    zoom: 12,
-                    center: { lat: 35.6762, lng: 139.6503 },
-                });
-                return;
-            }
-
-            const centerLat = allLocations.reduce((sum, loc) => sum + loc.lat, 0) / allLocations.length;
-            const centerLng = allLocations.reduce((sum, loc) => sum + loc.lng, 0) / allLocations.length;
-
-            map = new google.maps.Map(document.getElementById('map'), {
-                zoom: 12,
-                center: { lat: centerLat, lng: centerLng },
-            });
         }
 
         function renderLocations() {
             const listDiv = document.getElementById('locationList');
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            
-            let filtered = allLocations.filter(loc => 
+
+            let filtered = allLocations.filter(loc =>
                 loc.name.toLowerCase().includes(searchTerm) ||
                 loc.code.toLowerCase().includes(searchTerm) ||
                 loc.address.toLowerCase().includes(searchTerm) ||
                 loc.type.toLowerCase().includes(searchTerm)
             );
 
-            // 按 type 分组
             const grouped = {};
             filtered.forEach(loc => {
                 const type = loc.type || 'Others';
@@ -734,9 +673,7 @@
                 grouped[type].push(loc);
             });
 
-            // 按 type 名称排序
             const sortedTypes = Object.keys(grouped).sort();
-
             listDiv.innerHTML = '';
 
             if (sortedTypes.length === 0) {
@@ -745,11 +682,10 @@
             }
 
             sortedTypes.forEach(type => {
-                // 分类标题
                 const groupDiv = document.createElement('div');
                 groupDiv.className = 'location-group';
                 const groupId = `group-${type}`;
-                
+
                 const headerDiv = document.createElement('div');
                 headerDiv.className = 'location-group-header';
                 headerDiv.innerHTML = `
@@ -757,28 +693,26 @@
                     <span class="group-count">${grouped[type].length}</span>
                 `;
                 headerDiv.onclick = () => toggleGroup(groupId);
-                
+
                 groupDiv.appendChild(headerDiv);
 
-                // 分类下的地点
                 const itemsDiv = document.createElement('div');
                 itemsDiv.className = 'location-group-items';
                 itemsDiv.id = groupId;
 
                 grouped[type].sort((a, b) => {
-                    const numA = parseInt(a.code.match(/\d+/)?.[0] || 0);
-                    const numB = parseInt(b.code.match(/\d+/)?.[0] || 0);
-                    return numA - numB;
+                    return a.name.localeCompare(b.name, 'en', { sensitivity: 'base' });
                 }).forEach(loc => {
                     const checked = selectedLocations.find(s => s.id === loc.id);
                     const item = document.createElement('label');
                     item.className = 'location-item';
                     item.innerHTML = `
-                        <input type="checkbox" ${checked ? 'checked' : ''} 
-                               onchange="toggleLocation('${loc.id}', '${loc.code}', '${loc.name}', ${loc.lat}, ${loc.lng})">
+                        <input type="checkbox" ${checked ? 'checked' : ''}
+                               onchange="toggleLocation('${loc.id}', '${loc.code}', '${loc.name}', ${loc.lat || 0}, ${loc.lng || 0})">
                         <div class="location-info">
                             <div class="name">${loc.code} - ${loc.name}</div>
                             <div class="address">${loc.address} ${loc.notes ? `• ${loc.notes}` : ''}</div>
+                            <button class="view-map-btn" onclick="openLocationOnGoogleMaps(event, '${loc.lat || 0}', '${loc.lng || 0}', '${loc.name.replace(/'/g, "\\'")}', '${loc.address.replace(/'/g, "\\'")}')">🗺️ View on Maps</button>
                         </div>
                     `;
                     itemsDiv.appendChild(item);
@@ -787,153 +721,127 @@
                 groupDiv.appendChild(itemsDiv);
                 listDiv.appendChild(groupDiv);
             });
+
+            updateSelectedCount();
+        }
+
+        function openLocationOnGoogleMaps(event, lat, lng, name, address) {
+            event.stopPropagation();
+            if (lat && lng && lat !== 0 && lng !== 0) {
+                const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+                window.open(url, '_blank');
+            } else if (address) {
+                const url = `https://www.google.com/maps/search/${encodeURIComponent(address)}`;
+                window.open(url, '_blank');
+            } else {
+                alert('No coordinates or address available');
+            }
         }
 
         function toggleGroup(groupId) {
             const group = document.getElementById(groupId);
-            if (group) {
-                group.classList.toggle('hidden');
-            }
+            group.style.display = group.style.display === 'none' ? 'block' : 'none';
         }
 
         function toggleLocation(id, code, name, lat, lng) {
-            const existing = selectedLocations.find(s => s.id === id);
-            if (existing) {
-                selectedLocations = selectedLocations.filter(s => s.id !== id);
+            const index = selectedLocations.findIndex(s => s.id === id);
+            if (index > -1) {
+                selectedLocations.splice(index, 1);
             } else {
                 selectedLocations.push({ id, code, name, lat, lng });
             }
-            updateDisplay();
+            updateMap();
+            updateSelectedCount();
         }
 
-        function updateDisplay() {
-            document.getElementById('selectedCount').textContent = selectedLocations.length;
-            updateMap();
-            updateMapPoints();
+        function updateSelectedCount() {
+            document.getElementById('selectedCount').textContent = `Selected: ${selectedLocations.length} locations`;
         }
 
         function updateMap() {
-            markers.forEach(marker => marker.setMap(null));
-            markers = [];
+            if (!map) return;
 
-            if (selectedLocations.length === 0) return;
+            map.markers?.forEach(m => m.setMap(null));
+            map.markers = [];
+
+            if (selectedLocations.length === 0) {
+                map.setCenter({ lat: 34.6937, lng: 135.5023 });
+                return;
+            }
 
             const bounds = new google.maps.LatLngBounds();
+            selectedLocations.forEach(loc => {
+                if (loc.lat && loc.lng) {
+                    const marker = new google.maps.Marker({
+                        position: { lat: loc.lat, lng: loc.lng },
+                        map: map,
+                        title: `${loc.code} - ${loc.name}`
+                    });
 
-            selectedLocations.forEach((loc, index) => {
-                const position = { lat: loc.lat, lng: loc.lng };
-                bounds.extend(position);
+                    marker.addListener('click', () => {
+                        new google.maps.InfoWindow({
+                            content: `<div style="padding: 8px;"><strong>${loc.code} - ${loc.name}</strong></div>`
+                        }).open(map, marker);
+                    });
 
-                const marker = new google.maps.Marker({
-                    position,
-                    map,
-                    title: loc.name,
-                    label: String(index + 1),
-                });
-
-                markers.push(marker);
+                    map.markers.push(marker);
+                    bounds.extend(marker.getPosition());
+                }
             });
 
-            map.fitBounds(bounds);
-        }
-
-        function updateMapPoints() {
-            const container = document.getElementById('mapPoints');
-            container.innerHTML = selectedLocations.map((loc, index) => `
-                <div style="display: flex; gap: 8px; padding: 6px 0;">
-                    <div style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: #ef4444; color: white; font-weight: 600; font-size: 11px;">${index + 1}</div>
-                    <span>${loc.name}</span>
-                </div>
-            `).join('');
-        }
-
-        function openAdminModal() {
-            document.getElementById('adminModal').classList.add('active');
-            renderEditList();
-        }
-
-        function closeAdminModal() {
-            document.getElementById('adminModal').classList.remove('active');
-        }
-
-        function switchTab(tab) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            
-            document.getElementById(tab).classList.add('active');
-            event.target.classList.add('active');
-
-            if (tab === 'bulk' && document.getElementById('bulkRows').children.length === 0) {
-                addBulkRow();
+            if (map.markers.length > 0) {
+                map.fitBounds(bounds);
             }
         }
 
-        function getTypeOptions() {
-            const types = new Set();
-            allLocations.forEach(loc => {
-                if (loc.type) types.add(loc.type);
-            });
-            return Array.from(types).sort();
+        function openManageModal() {
+            document.getElementById('manageModal').classList.add('show');
+            loadEditLocationsList();
         }
 
-        function renderEditList() {
-            const listDiv = document.getElementById('editList');
-            const typeOptions = getTypeOptions();
-            
-            // 按 code 升序排序
-            const sorted = [...allLocations].sort((a, b) => {
-                const numA = parseInt(a.code.match(/\d+/)?.[0] || 0);
-                const numB = parseInt(b.code.match(/\d+/)?.[0] || 0);
-                return numA - numB;
-            });
-
-            listDiv.innerHTML = '';
-
-            sorted.forEach(loc => {
-                const row = document.createElement('div');
-                row.className = 'location-row';
-                const typeSelectOptions = typeOptions.map(t => `<option value="${t}" ${t === loc.type ? 'selected' : ''}>${t}</option>`).join('');
-                row.innerHTML = `
-                    <input type="text" id="code-${loc.id}" value="${loc.code}" placeholder="Code">
-                    <input type="text" id="name-${loc.id}" value="${loc.name}" placeholder="Name">
-                    <input type="text" id="addr-${loc.id}" value="${loc.address}" placeholder="Address">
-                    <select id="type-${loc.id}" data-field="type">
-                        <option value="">-- Select Type --</option>
-                        ${typeSelectOptions}
-                    </select>
-                    <input type="text" id="notes-${loc.id}" value="${loc.notes}" placeholder="Notes">
-                    <button class="btn-small btn-edit" onclick="editLocation('${loc.id}')">Save</button>
-                    <button class="btn-small btn-delete" onclick="deleteLocation('${loc.id}')">Delete</button>
-                `;
-                listDiv.appendChild(row);
-            });
+        function closeManageModal() {
+            document.getElementById('manageModal').classList.remove('show');
         }
 
-        async function editLocation(id) {
-            const code = document.getElementById(`code-${id}`).value;
-            const name = document.getElementById(`name-${id}`).value;
-            const address = document.getElementById(`addr-${id}`).value;
-            const type = document.getElementById(`type-${id}`).value;
-            const notes = document.getElementById(`notes-${id}`).value;
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        async function loadEditLocationsList() {
+            const container = document.getElementById('editLocationsList');
+            container.innerHTML = '<p style="text-align: center; color: #999;">Loading locations...</p>';
 
             try {
-                const response = await fetch(
-                    `${CONFIG.cloudflareWorkerUrl}?pageId=${id}`,
-                    {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ code, name, address, type, notes }),
-                    }
-                );
+                const response = await fetch(`${CONFIG.cloudflareWorkerUrl}/locations?database_id=${CONFIG.notionDatabaseId}`);
+                const locations = await response.json();
 
-                if (response.ok) {
-                    await loadLocations();
-                    renderEditList();
-                    renderLocations();
-                    alert('Location updated!');
-                }
+                const sorted = locations.sort((a, b) => a.code.localeCompare(b.code));
+
+                let html = '<button class="add-location-btn" onclick="addNewLocationRow()">+ Add Location</button>';
+
+                sorted.forEach(loc => {
+                    html += `
+                        <div class="location-row">
+                            <div class="location-row-header">
+                                <span class="location-row-code">${loc.code}</span>
+                                <div class="edit-delete-btns">
+                                    <button class="small-btn" onclick="editLocationModal('${loc.id}', '${loc.code.replace(/'/g, "\\'")}', '${loc.name.replace(/'/g, "\\'")}', '${loc.address.replace(/'/g, "\\'")}', '${(loc.type || '').replace(/'/g, "\\'")}', '${(loc.notes || '').replace(/'/g, "\\'")}')" >Edit</button>
+                                    <button class="small-btn delete" onclick="deleteLocation('${loc.id}')">Delete</button>
+                                </div>
+                            </div>
+                            <div style="font-size: 13px; color: #666;">📍 ${loc.name}</div>
+                            <div style="font-size: 12px; color: #999; margin-top: 4px;">${loc.address}</div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
             } catch (error) {
-                alert('Update failed');
+                console.error('Error loading locations:', error);
+                container.innerHTML = '<p style="text-align: center; color: #d32f2f;">Error loading locations</p>';
             }
         }
 
@@ -941,130 +849,82 @@
             if (!confirm('Are you sure?')) return;
 
             try {
-                const response = await fetch(
-                    `${CONFIG.cloudflareWorkerUrl}?pageId=${id}`,
-                    { method: 'DELETE' }
-                );
+                const response = await fetch(`${CONFIG.cloudflareWorkerUrl}/locations/${id}?database_id=${CONFIG.notionDatabaseId}`, {
+                    method: 'DELETE'
+                });
 
                 if (response.ok) {
-                    await loadLocations();
-                    renderEditList();
-                    renderLocations();
-                    alert('Location deleted!');
+                    alert('Location deleted');
+                    loadEditLocationsList();
+                    loadLocations();
+                } else {
+                    alert('Error deleting location');
                 }
             } catch (error) {
-                alert('Delete failed');
+                console.error('Error:', error);
+                alert('Error deleting location');
             }
         }
 
-        let bulkRowCount = 0;
+        async function importBulk() {
+            const text = document.getElementById('bulkImportText').value;
+            const message = document.getElementById('importMessage');
+            message.innerHTML = '';
 
-        function addBulkRow() {
-            const id = `bulk-${bulkRowCount++}`;
-            const container = document.getElementById('bulkRows');
-            const nextCode = getNextCode();
-            const typeOptions = getTypeOptions();
-            const typeSelectOptions = typeOptions.map(t => `<option value="${t}">${t}</option>`).join('');
-            
-            const row = document.createElement('div');
-            row.className = 'bulk-row';
-            row.id = id;
-            row.innerHTML = `
-                <input type="text" placeholder="Code" data-field="code" value="${nextCode}">
-                <input type="text" placeholder="Name" data-field="name">
-                <input type="text" placeholder="Address" data-field="address">
-                <select data-field="type">
-                    <option value="">-- Select Type --</option>
-                    ${typeSelectOptions}
-                </select>
-                <input type="text" placeholder="Notes" data-field="notes">
-                <button class="btn-remove-bulk" onclick="removeBulkRow('${id}')">Remove</button>
-            `;
-            
-            container.appendChild(row);
-        }
-
-        function removeBulkRow(id) {
-            const row = document.getElementById(id);
-            if (row) {
-                row.remove();
-            }
-        }
-
-        async function saveBulkLocations() {
-            const rows = document.querySelectorAll('.bulk-row');
-            
-            if (rows.length === 0) {
-                alert('Please add at least one location');
+            if (!text.trim()) {
+                message.innerHTML = '<div class="status-error">Please enter location data</div>';
                 return;
             }
 
-            let success = 0;
-            let failed = 0;
+            const lines = text.split('\n').filter(l => l.trim());
+            let success = 0, failed = 0;
 
-            for (const row of rows) {
-                const inputs = row.querySelectorAll('input');
-                const selects = row.querySelectorAll('select');
-                const data = {};
-                
-                inputs.forEach(input => {
-                    const field = input.getAttribute('data-field');
-                    data[field] = input.value.trim();
-                });
+            for (const line of lines) {
+                const [code, name, address, type, notes] = line.split('|').map(s => s.trim());
 
-                selects.forEach(select => {
-                    const field = select.getAttribute('data-field');
-                    data[field] = select.value.trim();
-                });
-
-                if (!data.name || !data.address) {
+                if (!code || !name || !address) {
                     failed++;
                     continue;
                 }
 
                 try {
-                    const response = await fetch(
-                        `${CONFIG.cloudflareWorkerUrl}?databaseId=${CONFIG.notionDatabaseId}`,
-                        {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                code: data.code || '',
-                                name: data.name,
-                                address: data.address,
-                                type: data.type || '',
-                                notes: data.notes || ''
-                            }),
-                        }
-                    );
+                    const response = await fetch(`${CONFIG.cloudflareWorkerUrl}/locations?database_id=${CONFIG.notionDatabaseId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ code, name, address, type: type || '', notes: notes || '' })
+                    });
 
                     if (response.ok) {
                         success++;
-                        row.style.background = '#d1fae5';
                     } else {
                         failed++;
-                        row.style.background = '#fee2e2';
                     }
                 } catch (error) {
                     failed++;
-                    row.style.background = '#fee2e2';
                 }
             }
 
-            alert(`Import complete! Success: ${success}, Failed: ${failed}`);
-
+            message.innerHTML = `<div class="status-success">✓ Import complete! Success: ${success}, Failed: ${failed}</div>`;
             if (success > 0) {
-                await loadLocations();
-                renderLocations();
-                
-                // 清空所有行
-                document.getElementById('bulkRows').innerHTML = '';
-                // 添加一行新的表单
-                addBulkRow();
+                document.getElementById('bulkImportText').value = '';
+                setTimeout(() => {
+                    loadEditLocationsList();
+                    loadLocations();
+                }, 1000);
             }
         }
 
-        window.addEventListener('load', init);
+        function addNewLocationRow() {
+            // Placeholder for adding new location
+            alert('Edit locations in the main Edit tab');
+        }
+
+        function editLocationModal(id, code, name, address, type, notes) {
+            // Placeholder for edit modal
+            alert('Edit functionality - coming soon');
+        }
+
+        window.addEventListener('load', initMap);
     </script>
 </body>
 </html>
