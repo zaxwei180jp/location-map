@@ -1091,6 +1091,38 @@
                 locations.push({ code, name, address, type, notes });
             });
 
+            // Check for duplicates
+            const duplicates = [];
+            locations.forEach(newLoc => {
+                allLocations.forEach(existingLoc => {
+                    if (newLoc.name === existingLoc.name || newLoc.address === existingLoc.address) {
+                        duplicates.push({
+                            newCode: newLoc.code,
+                            newName: newLoc.name,
+                            existingCode: existingLoc.code,
+                            existingName: existingLoc.name,
+                            matchType: newLoc.name === existingLoc.name ? 'Name' : 'Address'
+                        });
+                    }
+                });
+            });
+
+            // If duplicates found, ask for confirmation
+            if (duplicates.length > 0) {
+                let message_text = '⚠️ Found potential duplicates:\n\n';
+                duplicates.forEach(dup => {
+                    message_text += `【${dup.matchType} Match】\n`;
+                    message_text += `New: ${dup.newCode} - ${dup.newName}\n`;
+                    message_text += `Existing: ${dup.existingCode} - ${dup.existingName}\n\n`;
+                });
+                message_text += 'Do you want to continue adding?';
+
+                if (!confirm(message_text)) {
+                    message.innerHTML = '<div class="status-error">❌ Import cancelled</div>';
+                    return;
+                }
+            }
+
             for (const loc of locations) {
                 try {
                     const response = await fetch(`${CONFIG.cloudflareWorkerUrl}/locations?database_id=${CONFIG.notionDatabaseId}`, {
