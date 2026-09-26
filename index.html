@@ -645,11 +645,27 @@
             try {
                 const response = await fetch(`${CONFIG.cloudflareWorkerUrl}/locations?database_id=${CONFIG.notionDatabaseId}`);
                 const data = await response.json();
-                allLocations = data.filter(loc => loc.enabled).sort((a, b) => a.code.localeCompare(b.code));
+
+                // Check if response is an error
+                if (data.error) {
+                    console.error('API Error:', data.error);
+                    document.getElementById('locationList').innerHTML = '<div class="empty-state"><p>❌ Error: ' + data.error + '</p></div>';
+                    return;
+                }
+
+                // Check if data is an array
+                if (!Array.isArray(data)) {
+                    console.error('Unexpected response format:', data);
+                    document.getElementById('locationList').innerHTML = '<div class="empty-state"><p>❌ Unexpected response format</p></div>';
+                    return;
+                }
+
+                // Worker already filters enabled locations, just sort
+                allLocations = data.sort((a, b) => a.code.localeCompare(b.code));
                 renderLocations();
             } catch (error) {
                 console.error('Error loading locations:', error);
-                document.getElementById('locationList').innerHTML = '<div class="empty-state"><p>Error loading locations</p></div>';
+                document.getElementById('locationList').innerHTML = '<div class="empty-state"><p>❌ Error: ' + error.message + '</p></div>';
             }
         }
 
