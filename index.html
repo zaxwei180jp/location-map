@@ -1160,8 +1160,78 @@
         }
 
         function editLocationModal(id, code, name, address, type, notes) {
-            // Placeholder for edit modal
-            alert('Edit functionality - coming soon');
+            const modalDiv = document.createElement('div');
+            modalDiv.className = 'modal show';
+            modalDiv.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Edit Location</h2>
+                        <button class="close-btn" onclick="this.closest('.modal').remove()">×</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label class="form-label">Code</label>
+                            <input class="form-input" type="text" id="edit_code" value="${code}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Name</label>
+                            <input class="form-input" type="text" id="edit_name" value="${name}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Address</label>
+                            <input class="form-input" type="text" id="edit_address" value="${address}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Type</label>
+                            <select class="form-input" id="edit_type">
+                                <option value="">-- Select Type --</option>
+                                ${getTypeOptions().map(t => `<option value="${t}" ${t === type ? 'selected' : ''}>${t}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Notes</label>
+                            <input class="form-input" type="text" id="edit_notes" value="${notes}">
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button class="import-button" style="flex: 1;" onclick="saveEditLocation('${id}')">Save</button>
+                            <button class="small-btn delete" style="flex: 1;" onclick="this.closest('.modal').remove()">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modalDiv);
+        }
+
+        async function saveEditLocation(id) {
+            const name = document.getElementById('edit_name').value.trim();
+            const address = document.getElementById('edit_address').value.trim();
+            const type = document.getElementById('edit_type').value.trim();
+            const notes = document.getElementById('edit_notes').value.trim();
+
+            if (!name || !address) {
+                alert('Name and address are required');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${CONFIG.cloudflareWorkerUrl}/locations/${id}?database_id=${CONFIG.notionDatabaseId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, address, type, notes })
+                });
+
+                if (response.ok) {
+                    alert('Location updated');
+                    document.querySelector('.modal').remove();
+                    loadEditLocationsList();
+                    loadLocations();
+                } else {
+                    alert('Error updating location');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error updating location');
+            }
         }
 
         window.addEventListener('load', initMap);
