@@ -625,6 +625,14 @@
         let userMarker = null;
         let userLocation = null;
 
+        // Fixed landmark: Polar Japan
+        const FIXED_LANDMARK = {
+            name: 'Polar Japan',
+            address: '日本、〒556-0001 大阪府大阪市浪速区下寺２丁目９−９',
+            lat: 34.6687165,  // Will be geocoded
+            lng: 135.4397688  // Will be geocoded
+        };
+
         async function initMap() {
             map = new google.maps.Map(document.getElementById('map'), {
                 zoom: 12,
