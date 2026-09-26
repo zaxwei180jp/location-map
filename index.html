@@ -1128,7 +1128,10 @@
                     const response = await fetch(`${CONFIG.cloudflareWorkerUrl}/locations?database_id=${CONFIG.notionDatabaseId}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(loc)
+                        body: JSON.stringify({
+                            ...loc,
+                            database_id: CONFIG.notionDatabaseId
+                        })
                     });
 
                     if (response.ok) {
