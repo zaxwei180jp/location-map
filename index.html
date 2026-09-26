@@ -642,11 +642,36 @@
                 ]
             });
 
+            // Initialize fixed landmark
+            map.markers = [];
+            addFixedLandmark();
+
             await loadLocations();
             document.getElementById('searchInput').addEventListener('input', renderLocations);
 
             // Request user location
             requestUserLocation();
+        }
+
+        function addFixedLandmark() {
+            if (!map) return;
+
+            const marker = new google.maps.Marker({
+                position: { lat: FIXED_LANDMARK.lat, lng: FIXED_LANDMARK.lng },
+                map: map,
+                title: FIXED_LANDMARK.name,
+                icon: 'http://maps.google.com/mapfiles/ms/icons/orange-dot.png',
+                zIndex: 1000
+            });
+
+            marker.addListener('click', () => {
+                new google.maps.InfoWindow({
+                    content: `<div style="padding: 8px;"><strong>🌟 ${FIXED_LANDMARK.name}</strong><br/>${FIXED_LANDMARK.address}</div>`
+                }).open(map, marker);
+            });
+
+            map.fixedLandmarkMarker = marker;
+            map.markers.push(marker);
         }
 
         function requestUserLocation() {
@@ -841,15 +866,50 @@
         function updateMap() {
             if (!map) return;
 
-            map.markers?.forEach(m => m.setMap(null));
-            map.markers = [];
+            // Remove previous markers except fixed landmark
+            map.markers?.forEach(m => {
+                if (m !== map.fixedLandmarkMarker) {
+                    m.setMap(null);
+                }
+            });
+            map.markers = map.fixedLandmarkMarker ? [map.fixedLandmarkMarker] : [];
+
+            // Always show fixed landmark first
+            if (!map.fixedLandmarkMarker && FIXED_LANDMARK.lat && FIXED_LANDMARK.lng) {
+                const marker = new google.maps.Marker({
+                    position: { lat: FIXED_LANDMARK.lat, lng: FIXED_LANDMARK.lng },
+                    map: map,
+                    title: FIXED_LANDMARK.name,
+                    icon: 'http://maps.google.com/mapfiles/ms/icons/orange-dot.png'
+                });
+
+                marker.addListener('click', () => {
+                    new google.maps.InfoWindow({
+                        content: `<div style="padding: 8px;"><strong>🌟 ${FIXED_LANDMARK.name}</strong><br/>${FIXED_LANDMARK.address}</div>`
+                    }).open(map, marker);
+                });
+
+                map.fixedLandmarkMarker = marker;
+                map.markers.push(marker);
+            }
 
             if (selectedLocations.length === 0) {
-                map.setCenter({ lat: 34.6937, lng: 135.5023 });
+                // Just show fixed landmark area
+                if (map.fixedLandmarkMarker) {
+                    map.setCenter(map.fixedLandmarkMarker.getPosition());
+                    map.setZoom(14);
+                }
                 return;
             }
 
             const bounds = new google.maps.LatLngBounds();
+
+            // Add fixed landmark to bounds
+            if (map.fixedLandmarkMarker) {
+                bounds.extend(map.fixedLandmarkMarker.getPosition());
+            }
+
+            // Add selected locations
             selectedLocations.forEach(loc => {
                 if (loc.lat && loc.lng) {
                     const marker = new google.maps.Marker({
