@@ -1147,9 +1147,14 @@
             message.innerHTML = `<div class="status-success">✓ Import complete! Success: ${success}, Failed: ${failed}</div>`;
             if (success > 0) {
                 document.getElementById('bulkLocationsList').innerHTML = '';
+                // Wait for loadLocations to complete, then add new row
                 setTimeout(() => {
-                    loadLocations();
-                    addBulkRow();
+                    loadLocations().then(() => {
+                        // After locations are loaded, add a new blank row
+                        setTimeout(() => {
+                            addBulkRow();
+                        }, 500);
+                    });
                 }, 1000);
             }
         }
