@@ -656,22 +656,37 @@
         function addFixedLandmark() {
             if (!map) return;
 
-            const marker = new google.maps.Marker({
-                position: { lat: FIXED_LANDMARK.lat, lng: FIXED_LANDMARK.lng },
-                map: map,
-                title: FIXED_LANDMARK.name,
-                icon: 'http://maps.google.com/mapfiles/ms/icons/orange-dot.png',
-                zIndex: 1000
-            });
+            // Geocode the address to get correct coordinates
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ address: FIXED_LANDMARK.address }, (results, status) => {
+                if (status === 'OK' && results.length > 0) {
+                    const location = results[0].geometry.location;
 
-            marker.addListener('click', () => {
-                new google.maps.InfoWindow({
-                    content: `<div style="padding: 8px;"><strong>🌟 ${FIXED_LANDMARK.name}</strong><br/>${FIXED_LANDMARK.address}</div>`
-                }).open(map, marker);
-            });
+                    const marker = new google.maps.Marker({
+                        position: location,
+                        map: map,
+                        title: FIXED_LANDMARK.name,
+                        icon: 'http://maps.google.com/mapfiles/ms/icons/orange-dot.png',
+                        zIndex: 1000
+                    });
 
-            map.fixedLandmarkMarker = marker;
-            map.markers.push(marker);
+                    marker.addListener('click', () => {
+                        new google.maps.InfoWindow({
+                            content: `<div style="padding: 8px;"><strong>🌟 ${FIXED_LANDMARK.name}</strong><br/>${FIXED_LANDMARK.address}</div>`
+                        }).open(map, marker);
+                    });
+
+                    map.fixedLandmarkMarker = marker;
+
+                    // Update FIXED_LANDMARK with correct coordinates
+                    FIXED_LANDMARK.lat = location.lat();
+                    FIXED_LANDMARK.lng = location.lng();
+
+                    console.log('Polar Japan coordinates geocoded:', FIXED_LANDMARK.lat, FIXED_LANDMARK.lng);
+                } else {
+                    console.error('Geocode error:', status);
+                }
+            });
         }
 
         function requestUserLocation() {
