@@ -359,10 +359,68 @@
 
         .location-row {
             border: 1px solid #ddd;
-            border-radius: 6px;
-            padding: 12px;
+            border-radius: 8px;
+            padding: 16px;
             margin-bottom: 12px;
-            background-color: #f9f9f9;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .bulk-location-row {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        .bulk-row-header {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .bulk-row-inputs {
+            display: grid;
+            gap: 12px;
+        }
+
+        .bulk-row-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .bulk-row-input-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #666;
+        }
+
+        .bulk-row-input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .bulk-row-input:focus {
+            outline: none;
+            border-color: #5856d6;
+            box-shadow: 0 0 0 3px rgba(88, 86, 214, 0.1);
+        }
+
+        .bulk-row-delete {
+            color: #d32f2f;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0;
         }
 
         .location-row-header {
@@ -546,11 +604,9 @@
 
                 <!-- Import Tab -->
                 <div id="import" class="tab-content">
-                    <div class="form-group">
-                        <label class="form-label">Paste locations (code|name|address|type|notes per line):</label>
-                        <textarea class="import-textarea" id="bulkImportText" placeholder="LC002|Store 1|Tokyo|Customer|Opening soon&#10;LC003|Store 2|Osaka|Warehouse|Reserved parking"></textarea>
-                    </div>
-                    <button class="import-button" onclick="importBulk()">Import</button>
+                    <button class="add-location-btn" onclick="addBulkRow()">+ Add Location</button>
+                    <div id="bulkLocationsList"></div>
+                    <button class="import-button" onclick="saveBulkLocations()">Import All</button>
                     <div id="importMessage"></div>
                 </div>
             </div>
@@ -824,6 +880,14 @@
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             event.target.classList.add('active');
             document.getElementById(tabName).classList.add('active');
+
+            // Initialize import tab with first row
+            if (tabName === 'import') {
+                const container = document.getElementById('bulkLocationsList');
+                if (container.children.length === 0) {
+                    addBulkRow();
+                }
+            }
         }
 
         async function loadEditLocationsList() {
@@ -930,9 +994,129 @@
             }
         }
 
-        function addNewLocationRow() {
-            // Placeholder for adding new location
-            alert('Edit locations in the main Edit tab');
+        function addBulkRow() {
+            const container = document.getElementById('bulkLocationsList');
+            const nextCode = getNextCode();
+            const typeOptions = getTypeOptions();
+
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'bulk-location-row';
+            rowDiv.innerHTML = `
+                <div class="bulk-row-header">
+                    <span>New Location</span>
+                    <button class="bulk-row-delete" onclick="this.parentElement.parentElement.remove()">×</button>
+                </div>
+                <div class="bulk-row-inputs">
+                    <div class="bulk-row-input-group">
+                        <label class="bulk-row-input-label">Code</label>
+                        <input class="bulk-row-input" type="text" placeholder="LC001" value="${nextCode}">
+                    </div>
+                    <div class="bulk-row-input-group">
+                        <label class="bulk-row-input-label">Name</label>
+                        <input class="bulk-row-input" type="text" placeholder="Location Name">
+                    </div>
+                    <div class="bulk-row-input-group">
+                        <label class="bulk-row-input-label">Address</label>
+                        <input class="bulk-row-input" type="text" placeholder="Full Address">
+                    </div>
+                    <div class="bulk-row-input-group">
+                        <label class="bulk-row-input-label">Type</label>
+                        <select class="bulk-row-input">
+                            <option value="">-- Select Type --</option>
+                            ${typeOptions.map(t => `<option value="${t}">${t}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="bulk-row-input-group">
+                        <label class="bulk-row-input-label">Notes (Optional)</label>
+                        <input class="bulk-row-input" type="text" placeholder="Any notes">
+                    </div>
+                </div>
+            `;
+            container.appendChild(rowDiv);
+        }
+
+        function getNextCode() {
+            const existing = allLocations.map(l => {
+                const match = l.code.match(/\d+/);
+                return match ? parseInt(match[0]) : 0;
+            });
+
+            const rows = document.getElementById('bulkLocationsList').querySelectorAll('.bulk-location-row');
+            rows.forEach(row => {
+                const input = row.querySelector('input[type="text"]');
+                if (input) {
+                    const match = input.value.match(/\d+/);
+                    if (match) {
+                        existing.push(parseInt(match[0]));
+                    }
+                }
+            });
+
+            const maxNum = existing.length > 0 ? Math.max(...existing) : 0;
+            const prefix = 'LC';
+            return prefix + String(maxNum + 1).padStart(3, '0');
+        }
+
+        function getTypeOptions() {
+            const types = new Set(allLocations.map(l => l.type).filter(t => t));
+            return Array.from(types).sort();
+        }
+
+        async function saveBulkLocations() {
+            const rows = document.getElementById('bulkLocationsList').querySelectorAll('.bulk-location-row');
+            const message = document.getElementById('importMessage');
+            message.innerHTML = '';
+
+            if (rows.length === 0) {
+                message.innerHTML = '<div class="status-error">Please add at least one location</div>';
+                return;
+            }
+
+            let success = 0, failed = 0;
+            const locations = [];
+
+            rows.forEach((row, index) => {
+                const inputs = row.querySelectorAll('input, select');
+                const code = inputs[0].value.trim();
+                const name = inputs[1].value.trim();
+                const address = inputs[2].value.trim();
+                const type = inputs[3].value.trim();
+                const notes = inputs[4].value.trim();
+
+                if (!code || !name || !address) {
+                    failed++;
+                    return;
+                }
+
+                locations.push({ code, name, address, type, notes });
+            });
+
+            for (const loc of locations) {
+                try {
+                    const response = await fetch(`${CONFIG.cloudflareWorkerUrl}/locations?database_id=${CONFIG.notionDatabaseId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(loc)
+                    });
+
+                    if (response.ok) {
+                        success++;
+                    } else {
+                        failed++;
+                    }
+                } catch (error) {
+                    failed++;
+                }
+            }
+
+            message.innerHTML = `<div class="status-success">✓ Import complete! Success: ${success}, Failed: ${failed}</div>`;
+            if (success > 0) {
+                document.getElementById('bulkLocationsList').innerHTML = '';
+                setTimeout(() => {
+                    loadLocations();
+                    addBulkRow();
+                }, 1000);
+            }
         }
 
         function editLocationModal(id, code, name, address, type, notes) {
