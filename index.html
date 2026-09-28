@@ -810,7 +810,7 @@
             selectedLocations = saved ? JSON.parse(saved) : [];
             if (!selectedLocations.length) { alert('No locations'); window.close(); return; }
 
-            map = new google.maps.Map(document.getElementById('map'), { zoom: 12, center: { lat: 34.6937, lng: 135.5023 }, styles: [{ featureType: 'poi', stylers: [{ visibility: 'off' }] }] });
+            map = new google.maps.Map(document.getElementById('map'), { zoom: 12, center: { lat: 34.6937, lng: 135.5023 }, styles: [{ featureType: 'poi', stylers: [{ visibility: 'off' }] }, { featureType: 'poi.business', stylers: [{ visibility: 'off' }] }, { featureType: 'transit', stylers: [{ visibility: 'off' }] }, { featureType: 'poi.attraction', stylers: [{ visibility: 'off' }] }, { featureType: 'poi.government', stylers: [{ visibility: 'off' }] }, { featureType: 'poi.medical', stylers: [{ visibility: 'off' }] }, { featureType: 'poi.park', stylers: [{ visibility: 'off' }] }, { featureType: 'poi.place_of_worship', stylers: [{ visibility: 'off' }] }, { featureType: 'poi.school', stylers: [{ visibility: 'off' }] }, { featureType: 'poi.sports_complex', stylers: [{ visibility: 'off' }] }] });
             addFixedLandmark();
             displaySelectedLocations();
             displayLocationsList();
