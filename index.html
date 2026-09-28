@@ -189,6 +189,10 @@
             height: 100%;
         }
 
+        .map-container.hidden {
+            display: none;
+        }
+
         .button-group {
             padding: 15px 20px;
             display: flex;
@@ -578,7 +582,7 @@
             </div>
         </div>
 
-        <div class="map-container">
+        <div class="map-container hidden" id="mapContainer">
             <div id="map"></div>
             <button class="map-button" onclick="centerToUserLocation()">📍 My Location</button>
         </div>
@@ -870,6 +874,19 @@
             } else {
                 selectedLocations.push({ id, code, name, lat, lng });
             }
+
+            // Show/hide map based on selected locations
+            const mapContainer = document.getElementById('mapContainer');
+            if (selectedLocations.length > 0) {
+                mapContainer.classList.remove('hidden');
+                // Initialize map if not already initialized
+                if (!map) {
+                    initMap();
+                }
+            } else {
+                mapContainer.classList.add('hidden');
+            }
+
             updateMap();
             updateSelectedCount();
         }
@@ -1317,7 +1334,12 @@
             }
         }
 
-        window.addEventListener('load', initMap);
+        // Initialize page - load locations but don't show map yet
+        window.addEventListener('load', async () => {
+            await loadLocations();
+            document.getElementById('searchInput').addEventListener('input', renderLocations);
+            requestUserLocation();
+        });
     </script>
 </body>
 </html>
