@@ -81,32 +81,34 @@
         }
 
         .location-group-header {
-            padding: 12px 20px;
-            background-color: #f9f9f9;
+            padding: 14px 20px;
+            background-color: #f5f5f5;
             cursor: pointer;
             display: flex;
             justify-content: space-between;
             align-items: center;
             user-select: none;
             transition: background-color 0.2s;
+            border-left: 4px solid #5856d6;
         }
 
         .location-group-header:hover {
-            background-color: #f0f0f0;
+            background-color: #efefef;
         }
 
         .group-title {
-            font-weight: 600;
+            font-weight: 700;
             color: #333;
-            font-size: 15px;
+            font-size: 16px;
         }
 
         .group-count {
-            background-color: #e0e0e0;
-            color: #666;
-            padding: 2px 8px;
+            background-color: #5856d6;
+            color: white;
+            padding: 4px 10px;
             border-radius: 12px;
             font-size: 12px;
+            font-weight: 600;
         }
 
         .location-group-items {
@@ -116,7 +118,7 @@
         .location-item {
             display: flex;
             align-items: flex-start;
-            padding: 12px 20px;
+            padding: 16px 20px;
             border-bottom: 1px solid #f5f5f5;
             cursor: pointer;
             transition: background-color 0.15s;
@@ -127,10 +129,10 @@
         }
 
         .location-item input[type="checkbox"] {
-            margin-top: 4px;
-            margin-right: 12px;
-            width: 18px;
-            height: 18px;
+            margin-top: 6px;
+            margin-right: 14px;
+            width: 20px;
+            height: 20px;
             cursor: pointer;
             flex-shrink: 0;
         }
@@ -140,29 +142,36 @@
             min-width: 0;
         }
 
+        .location-info .code {
+            font-weight: 600;
+            color: #5856d6;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+
         .location-info .name {
-            font-weight: 500;
+            font-weight: 600;
             color: #333;
-            font-size: 14px;
-            margin-bottom: 4px;
+            font-size: 15px;
+            margin-bottom: 6px;
         }
 
         .location-info .address {
-            font-size: 12px;
+            font-size: 13px;
             color: #666;
-            line-height: 1.4;
+            line-height: 1.5;
             word-break: break-word;
+            margin-bottom: 8px;
         }
 
         .view-map-btn {
             display: inline-block;
-            margin-top: 6px;
-            padding: 6px 12px;
+            padding: 8px 14px;
             background-color: #5856d6;
             color: white;
             border: none;
-            border-radius: 4px;
-            font-size: 12px;
+            border-radius: 5px;
+            font-size: 13px;
             font-weight: 500;
             cursor: pointer;
             transition: background-color 0.2s;
@@ -830,7 +839,8 @@
                         <input type="checkbox" ${checked ? 'checked' : ''}
                                onchange="toggleLocation('${loc.id}', '${loc.code}', '${loc.name}', ${loc.lat || 0}, ${loc.lng || 0})">
                         <div class="location-info">
-                            <div class="name">${loc.code} - ${loc.name}</div>
+                            <div class="code">${loc.code}</div>
+                            <div class="name">${loc.name}</div>
                             <div class="address">${loc.address} ${loc.notes ? `• ${loc.notes}` : ''}</div>
                             <button class="view-map-btn" onclick="openLocationOnGoogleMaps(event, '${loc.lat || 0}', '${loc.lng || 0}', '${loc.name.replace(/'/g, "\\'")}', '${loc.address.replace(/'/g, "\\'")}')">🗺️ View on Maps</button>
                         </div>
