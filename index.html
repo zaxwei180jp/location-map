@@ -168,14 +168,13 @@
         }
 
         .location-info .code {
-            font-weight: 700;
-            color: #5856d6;
-            font-size: 18px;
-            letter-spacing: 0.5px;
+            display: none;
         }
 
         .location-info .name {
-            display: none;
+            font-weight: 700;
+            color: #333;
+            font-size: 17px;
         }
 
         .location-info .address {
@@ -523,7 +522,7 @@
                             <input type="checkbox" ${checked ? 'checked' : ''}
                                    onchange="toggleLocation('${loc.id}', '${loc.code}', '${loc.name}', ${loc.lat || 0}, ${loc.lng || 0})">
                             <div class="location-info">
-                                <div class="code">${loc.code}</div>
+                                <div class="name">${loc.name}</div>
                             </div>
                         `;
                         itemsDiv.appendChild(item);
