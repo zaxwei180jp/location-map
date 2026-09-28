@@ -831,8 +831,8 @@
         function displaySelectedLocations() {
             selectedLocations.forEach(loc => {
                 if (loc.lat && loc.lng && loc.lat !== 0) {
-                    const m = new google.maps.Marker({ position: { lat: loc.lat, lng: loc.lng }, map: map, title: loc.name, icon: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png' });
-                    m.addListener('click', () => new google.maps.InfoWindow({ content: \`<div style="padding: 8px;"><strong>\${loc.code} - \${loc.name}<\/strong><br/>\${loc.address}<\/div>\` }).open(map, m));
+                    const m = new google.maps.Marker({ position: { lat: loc.lat, lng: loc.lng }, map: map, title: loc.name, icon: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png' });
+                    m.addListener('click', () => new google.maps.InfoWindow({ content: \`<div style="padding: 8px;"><strong>\${loc.code}<\/strong><br/>\${loc.name}<\/div>\` }).open(map, m));
                     allMarkers.push(m);
                 }
             });
