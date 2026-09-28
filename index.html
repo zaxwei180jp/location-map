@@ -135,29 +135,31 @@
 
         .location-item {
             display: flex;
-            align-items: flex-start;
-            padding: 14px 14px;
+            align-items: center;
+            padding: 20px 16px;
             cursor: pointer;
             background-color: white;
             border-radius: 8px;
-            border: 1px solid #e5e5e5;
+            border: 2px solid #e0e0e0;
             transition: all 0.15s ease;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            min-height: 60px;
         }
 
         .location-item:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
             transform: translateY(-2px);
-            border-color: #d0d0d0;
+            border-color: #5856d6;
+            background-color: #fafafa;
         }
 
         .location-item input[type="checkbox"] {
-            margin-top: 3px;
-            margin-right: 12px;
-            width: 20px;
-            height: 20px;
+            margin-right: 20px;
+            width: 28px;
+            height: 28px;
             cursor: pointer;
             flex-shrink: 0;
+            accent-color: #5856d6;
         }
 
         .location-info {
@@ -168,40 +170,20 @@
         .location-info .code {
             font-weight: 700;
             color: #5856d6;
-            font-size: 13px;
-            margin-bottom: 4px;
+            font-size: 18px;
+            letter-spacing: 0.5px;
         }
 
         .location-info .name {
-            font-weight: 600;
-            color: #333;
-            font-size: 14px;
-            margin-bottom: 4px;
+            display: none;
         }
 
         .location-info .address {
-            font-size: 12px;
-            color: #666;
-            line-height: 1.5;
-            word-break: break-word;
-            margin-bottom: 8px;
+            display: none;
         }
 
         .view-map-btn {
-            display: inline-block;
-            padding: 6px 12px;
-            background-color: #5856d6;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .view-map-btn:hover {
-            background-color: #4741c4;
+            display: none;
         }
 
         .button-group {
@@ -542,9 +524,6 @@
                                    onchange="toggleLocation('${loc.id}', '${loc.code}', '${loc.name}', ${loc.lat || 0}, ${loc.lng || 0})">
                             <div class="location-info">
                                 <div class="code">${loc.code}</div>
-                                <div class="name">${loc.name}</div>
-                                <div class="address">${loc.address} ${loc.notes ? `• ${loc.notes}` : ''}</div>
-                                <button class="view-map-btn" onclick="openLocationOnGoogleMaps(event, '${loc.lat || 0}', '${loc.lng || 0}', '${loc.name.replace(/'/g, "\\'")}', '${loc.address.replace(/'/g, "\\'")}')">🗺️ View on Maps</button>
                             </div>
                         `;
                         itemsDiv.appendChild(item);
