@@ -701,14 +701,34 @@
 
         let bulkRows = 0;
 
+        function getNextAutoCode() {
+            if (!allLocations || allLocations.length === 0) return 'A001';
+
+            const codes = allLocations.map(loc => loc.code).filter(Boolean);
+            const numbers = codes
+                .map(code => {
+                    const match = code.match(/(\d+)$/);
+                    return match ? parseInt(match[1]) : 0;
+                })
+                .filter(n => n > 0);
+
+            if (numbers.length === 0) return 'A001';
+
+            const maxNum = Math.max(...numbers);
+            const nextNum = maxNum + 1;
+            const prefix = codes[codes.length - 1]?.replace(/\d+$/, '') || 'A';
+            return prefix + String(nextNum).padStart(3, '0');
+        }
+
         function addBulkRow() {
             const container = document.getElementById('bulkLocationsList');
             const rowNum = ++bulkRows;
+            const autoCode = getNextAutoCode();
 
             const row = document.createElement('div');
             row.className = 'location-card';
             row.innerHTML = `
-                <input class="form-input" style="margin-bottom: 8px;" type="text" placeholder="Code" id="bulk_code_${rowNum}">
+                <input class="form-input" style="margin-bottom: 8px;" type="text" placeholder="Code" id="bulk_code_${rowNum}" value="${autoCode}">
                 <input class="form-input" style="margin-bottom: 8px;" type="text" placeholder="Name" id="bulk_name_${rowNum}">
                 <input class="form-input" style="margin-bottom: 8px;" type="text" placeholder="Address" id="bulk_address_${rowNum}">
                 <select class="form-input" id="bulk_type_${rowNum}" style="margin-bottom: 8px;">
