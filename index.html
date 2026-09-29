@@ -188,6 +188,21 @@
             display: none;
         }
 
+        .maps-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+            flex-shrink: 0;
+        }
+
+        .maps-btn:hover {
+            background-color: #f0f0f0;
+        }
+
         .button-group {
             padding: 15px 20px;
             display: flex;
@@ -527,6 +542,7 @@
                             <div class="location-info">
                                 <div class="name">${loc.name}</div>
                             </div>
+                            <button class="maps-btn" onclick="openLocationOnGoogleMaps(event, ${loc.lat || 0}, ${loc.lng || 0}, '${loc.name}', '${loc.address}')">🗺️</button>
                         `;
                         itemsDiv.appendChild(item);
                     });
