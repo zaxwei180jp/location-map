@@ -605,6 +605,7 @@
                 <div class="location-card">
                     <strong>${loc.code} - ${loc.name}</strong><br/>
                     ${loc.address}<br/>
+                    ${loc.notes ? `<div style="margin-top: 4px; font-size: 12px; color: #666;">${loc.notes}</div>` : ''}
                     <div style="margin-top: 8px;">
                         <button class="small-btn" onclick="editLocationModal('${loc.id}', '${loc.code}', '${loc.name.replace(/'/g, "\\'")}', '${loc.address.replace(/'/g, "\\'")}', '${loc.type || ''}', '${loc.notes?.replace(/'/g, "\\'") || ''}')">Edit</button>
                         <button class="small-btn delete" style="margin-left: 4px;" onclick="deleteLocation('${loc.id}')">Delete</button>
@@ -674,15 +675,20 @@
                     body: JSON.stringify({ name, address, type, notes })
                 });
 
-                if (response.ok) {
-                    alert('Location updated');
+                const responseText = await response.text();
+
+                if (response.ok || response.status === 200 || response.status === 201) {
+                    alert('✓ Location updated successfully');
                     document.querySelector('.modal').remove();
-                    loadEditLocationsList();
                     await loadLocations();
+                    loadEditLocationsList();
+                } else {
+                    console.error('Update failed:', responseText);
+                    alert(`Error: ${responseText || 'Failed to update location'}`);
                 }
             } catch (error) {
-                console.error('Error:', error);
-                alert('Error updating location');
+                console.error('Error updating location:', error);
+                alert('Error updating location: ' + error.message);
             }
         }
 
