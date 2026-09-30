@@ -455,6 +455,7 @@
 
                 <!-- Edit Tab -->
                 <div id="edit" class="tab-content active">
+                    <input type="text" id="editSearchInput" class="search-input" placeholder="搜尋點位..." style="margin-bottom: 12px;">
                     <div id="editLocationsList"></div>
                 </div>
 
@@ -586,6 +587,38 @@
         function openManageModal() {
             document.getElementById('manageModal').classList.add('show');
             loadEditLocationsList();
+            const editSearchInput = document.getElementById('editSearchInput');
+            if (editSearchInput) {
+                editSearchInput.value = '';
+                editSearchInput.addEventListener('input', filterEditLocationsList);
+            }
+        }
+
+        function filterEditLocationsList() {
+            const searchTerm = document.getElementById('editSearchInput').value.toLowerCase();
+            const filtered = allLocations.filter(loc =>
+                (loc.name && loc.name.toLowerCase().includes(searchTerm)) ||
+                (loc.code && loc.code.toLowerCase().includes(searchTerm)) ||
+                (loc.address && loc.address.toLowerCase().includes(searchTerm))
+            );
+
+            const list = document.getElementById('editLocationsList');
+            if (filtered.length === 0) {
+                list.innerHTML = '<div class="empty-state">未找到點位</div>';
+                return;
+            }
+
+            list.innerHTML = filtered.map(loc => `
+                <div class="location-card">
+                    <strong>${loc.code} - ${loc.name}</strong><br/>
+                    ${loc.address}<br/>
+                    ${loc.notes ? `<div style="margin-top: 4px; font-size: 12px; color: #666;">${loc.notes}</div>` : ''}
+                    <div style="margin-top: 8px;">
+                        <button class="small-btn" onclick="editLocationModal('${loc.id}', '${loc.code}', '${loc.name.replace(/'/g, "\\'")}', '${loc.address.replace(/'/g, "\\'")}', '${loc.type || ''}', '${loc.notes?.replace(/'/g, "\\'") || ''}')">Edit</button>
+                        <button class="small-btn delete" style="margin-left: 4px;" onclick="deleteLocation('${loc.id}')">Delete</button>
+                    </div>
+                </div>
+            `).join('');
         }
 
         function closeManageModal() {
