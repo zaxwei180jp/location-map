@@ -554,6 +554,7 @@
                 const itemsDiv = document.createElement('div');
                 itemsDiv.className = 'location-group-items';
                 itemsDiv.id = groupId;
+                itemsDiv.style.display = 'none';
 
                 locations.sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }))
                     .forEach(loc => {
