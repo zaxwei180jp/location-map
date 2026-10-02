@@ -714,10 +714,19 @@
                 const responseText = await response.text();
 
                 if (response.ok || response.status === 200 || response.status === 201) {
+                    // 先關閉 modal
+                    const modal = document.querySelector('.modal');
+                    if (modal) {
+                        modal.remove();
+                    }
+
+                    // 顯示成功訊息
                     alert('✓ Location updated successfully');
-                    document.querySelector('.modal').remove();
-                    await loadLocations();
-                    loadEditLocationsList();
+
+                    // 重新整理頁面
+                    setTimeout(() => {
+                        location.reload();
+                    }, 300);
                 } else {
                     console.error('Update failed:', responseText);
                     alert(`Error: ${responseText || 'Failed to update location'}`);
@@ -737,9 +746,10 @@
                 });
 
                 if (response.ok) {
-                    alert('Location deleted');
-                    loadEditLocationsList();
-                    await loadLocations();
+                    alert('✓ Location deleted');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 300);
                 }
             } catch (error) {
                 console.error('Error:', error);
@@ -832,12 +842,9 @@
 
             message.innerHTML = `<div class="status-success">✓ Import complete! Success: ${success}, Failed: ${failed}</div>`;
             if (success > 0) {
-                document.getElementById('bulkLocationsList').innerHTML = '';
                 setTimeout(() => {
-                    loadLocations().then(() => {
-                        setTimeout(() => addBulkRow(), 500);
-                    });
-                }, 1000);
+                    location.reload();
+                }, 1500);
             }
         }
 
