@@ -145,7 +145,7 @@
 
         .location-item {
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             padding: 16px;
             cursor: pointer;
             background-color: white;
@@ -154,8 +154,8 @@
             transition: all 0.15s ease;
             box-shadow: 0 1px 3px rgba(0,0,0,0.08);
             min-height: auto;
-            justify-content: space-between;
             gap: 12px;
+            align-items: flex-start;
         }
 
         .location-item:hover {
@@ -166,7 +166,11 @@
         }
 
         .location-item input[type="checkbox"] {
-            display: none;
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            cursor: pointer;
+            accent-color: #5856d6;
         }
 
         .location-info {
@@ -545,17 +549,17 @@
                 locations.sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }))
                     .forEach(loc => {
                         const checked = selectedLocations.find(s => s.id === loc.id);
-                        const item = document.createElement('label');
+                        const item = document.createElement('div');
                         item.className = 'location-item';
+                        item.style.cursor = 'pointer';
+                        item.onclick = () => openLocationOnGoogleMaps(null, ${loc.lat || 0}, ${loc.lng || 0}, '${loc.name}', '${loc.address}');
                         item.innerHTML = `
                             <input type="checkbox" ${checked ? 'checked' : ''}
-                                   onchange="toggleLocation('${loc.id}', '${loc.code}', '${loc.name}', ${loc.lat || 0}, ${loc.lng || 0})">
+                                   onchange="event.stopPropagation(); toggleLocation('${loc.id}', '${loc.code}', '${loc.name}', ${loc.lat || 0}, ${loc.lng || 0})"
+                                   style="cursor: pointer;">
                             <div class="location-info">
                                 <div class="name">${loc.name}</div>
-                                ${loc.notes ? `<div style="font-size: 12px; color: #999; margin-top: 4px;">${loc.notes}</div>` : ''}
-                            </div>
-                            <div style="display: flex; gap: 8px;">
-                                <button class="maps-btn" onclick="openLocationOnGoogleMaps(event, ${loc.lat || 0}, ${loc.lng || 0}, '${loc.name}', '${loc.address}')">🗺️</button>
+                                <div style="font-size: 12px; color: #999; margin-top: 4px;">${loc.address}</div>
                             </div>
                         `;
                         itemsDiv.appendChild(item);
@@ -584,7 +588,7 @@
 
 
         function openLocationOnGoogleMaps(event, lat, lng, name, address) {
-            event.stopPropagation();
+            if (event) event.stopPropagation();
             if (address) {
                 const url = `https://www.google.com/maps/search/${encodeURIComponent(address)}`;
                 window.open(url, '_blank');
