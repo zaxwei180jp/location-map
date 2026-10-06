@@ -560,8 +560,12 @@
                                 <div style="font-size: 12px; color: #999; margin-top: 4px;">${loc.address}</div>
                             </div>
                         `;
+                        const lat = loc.lat || 0;
+                        const lng = loc.lng || 0;
+                        const name = loc.name;
+                        const address = loc.address;
                         item.onclick = function() {
-                            openLocationOnGoogleMaps(null, ${loc.lat || 0}, ${loc.lng || 0}, '${loc.name}', '${loc.address}');
+                            openLocationOnGoogleMaps(null, lat, lng, name, address);
                         };
                         itemsDiv.appendChild(item);
                     });
