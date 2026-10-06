@@ -441,23 +441,10 @@
                     <div class="location-list" id="locationList"></div>
                 </div>
 
-                <!-- Route Task Panel -->
-                <div id="routeTaskPanel" style="display: none; flex: 0 0 45%; flex-direction: column; border-top: 1px solid #e0e0e0; background-color: white; overflow: hidden;">
-                    <div style="padding: 12px 16px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
-                        <h2 style="font-size: 16px; margin: 0;">🚚 行程清單</h2>
-                        <button style="background: none; border: none; font-size: 18px; cursor: pointer;" onclick="toggleRouteTask()">×</button>
-                    </div>
-                    <div id="routeTaskList" style="flex: 1; overflow-y: auto; padding: 12px;"></div>
-                    <div style="padding: 12px; border-top: 1px solid #e0e0e0; display: flex; gap: 8px; flex-shrink: 0;">
-                        <button class="btn btn-secondary" style="flex: 1; font-size: 12px;" onclick="clearRouteTask()">清空</button>
-                        <button class="btn btn-primary" style="flex: 1; font-size: 12px;" onclick="openMapFromRoute()">🗺️ Open Map</button>
-                    </div>
-                </div>
             </div>
 
             <div class="button-group">
                 <button class="btn btn-primary" onclick="openManageModal()">⚙️ Manage Locations</button>
-                <button class="btn btn-primary" onclick="toggleRouteTask()" id="routeTaskBtn">🚚 行程任務 (<span id="routeCount">0</span>)</button>
             </div>
         </div>
     </div>
@@ -500,7 +487,6 @@
 
         let allLocations = [];
         let selectedLocations = [];
-        let routeTasks = [];
 
         async function loadLocations() {
             try {
@@ -570,7 +556,6 @@
                             </div>
                             <div style="display: flex; gap: 8px;">
                                 <button class="maps-btn" onclick="openLocationOnGoogleMaps(event, ${loc.lat || 0}, ${loc.lng || 0}, '${loc.name}', '${loc.address}')">🗺️</button>
-                                <button class="maps-btn" style="background-color: #34C759; color: white;" onclick="addToRouteTask('${loc.id}', '${loc.code}', '${loc.name}', ${loc.lat || 0}, ${loc.lng || 0})">+</button>
                             </div>
                         `;
                         itemsDiv.appendChild(item);
@@ -597,92 +582,6 @@
             document.getElementById('selectedCount').textContent = `Selected: ${selectedLocations.length} locations`;
         }
 
-        // Route Task Functions
-        function toggleRouteTask() {
-            const panel = document.getElementById('routeTaskPanel');
-            panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
-            renderRouteTask();
-        }
-
-        function addToRouteTask(id, code, name, lat, lng) {
-            const exists = routeTasks.find(t => t.id === id);
-            if (!exists) {
-                routeTasks.push({ id, code, name, lat, lng, completed: false });
-                updateRouteCount();
-                renderRouteTask();
-                const panel = document.getElementById('routeTaskPanel');
-                if (panel.style.display === 'none') {
-                    panel.style.display = 'flex';
-                }
-            }
-        }
-
-        function removeFromRouteTask(id) {
-            routeTasks = routeTasks.filter(t => t.id !== id);
-            updateRouteCount();
-            renderRouteTask();
-        }
-
-        function moveRouteTask(index, direction) {
-            if (direction === 'up' && index > 0) {
-                [routeTasks[index], routeTasks[index - 1]] = [routeTasks[index - 1], routeTasks[index]];
-            } else if (direction === 'down' && index < routeTasks.length - 1) {
-                [routeTasks[index], routeTasks[index + 1]] = [routeTasks[index + 1], routeTasks[index]];
-            }
-            renderRouteTask();
-        }
-
-        function toggleCompleteTask(id) {
-            const task = routeTasks.find(t => t.id === id);
-            if (task) {
-                task.completed = !task.completed;
-                renderRouteTask();
-            }
-        }
-
-        function updateRouteCount() {
-            document.getElementById('routeCount').textContent = routeTasks.length;
-        }
-
-        function renderRouteTask() {
-            const listDiv = document.getElementById('routeTaskList');
-            if (routeTasks.length === 0) {
-                listDiv.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">尚未加入任何點位</div>';
-                return;
-            }
-
-            listDiv.innerHTML = routeTasks.map((task, index) => `
-                <div style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; gap: 8px; align-items: center;">
-                    <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleCompleteTask('${task.id}')" style="width: 18px; height: 18px; cursor: pointer;">
-                    <div style="flex: 1; min-width: 0;">
-                        <div style="font-weight: 600; ${task.completed ? 'text-decoration: line-through; color: #999;' : ''}">${index + 1}. ${task.name}</div>
-                        <div style="font-size: 12px; color: #666;">${task.code}</div>
-                    </div>
-                    <div style="display: flex; gap: 4px;">
-                        ${index > 0 ? `<button style="background: none; border: none; font-size: 16px; cursor: pointer; padding: 4px;" onclick="moveRouteTask(${index}, 'up')">↑</button>` : ''}
-                        ${index < routeTasks.length - 1 ? `<button style="background: none; border: none; font-size: 16px; cursor: pointer; padding: 4px;" onclick="moveRouteTask(${index}, 'down')">↓</button>` : ''}
-                        <button style="background: none; border: none; color: #ff3b30; font-size: 16px; cursor: pointer; padding: 4px;" onclick="removeFromRouteTask('${task.id}')">×</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function clearRouteTask() {
-            if (confirm('確定要清空所有行程嗎？')) {
-                routeTasks = [];
-                updateRouteCount();
-                renderRouteTask();
-            }
-        }
-
-        function openMapFromRoute() {
-            if (routeTasks.length === 0) {
-                alert('請先加入點位到行程任務');
-                return;
-            }
-            selectedLocations = routeTasks.map(t => ({ id: t.id, code: t.code, name: t.name, lat: t.lat, lng: t.lng }));
-            openMapWindow();
-        }
 
         function openLocationOnGoogleMaps(event, lat, lng, name, address) {
             event.stopPropagation();
