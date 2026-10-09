@@ -564,10 +564,14 @@
                             </div>
                         `;
                         // Add click event to location-info to open map
+                        const lat = loc.lat || 0;
+                        const lng = loc.lng || 0;
+                        const name = loc.name;
+                        const address = loc.address;
                         const infoDiv = item.querySelector('.location-info');
                         infoDiv.onclick = function(e) {
                             e.stopPropagation();
-                            openLocationOnGoogleMaps(null, ${loc.lat || 0}, ${loc.lng || 0}, '${loc.name}', '${loc.address}');
+                            openLocationOnGoogleMaps(null, lat, lng, name, address);
                         };
                         itemsDiv.appendChild(item);
                     });
