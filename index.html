@@ -230,6 +230,120 @@
             z-index: 100;
         }
 
+        .button-group .btn {
+            font-size: 13px;
+            padding: 10px 6px;
+        }
+
+        /* Daily task list */
+        .task-item {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            background-color: white;
+        }
+
+        .task-item.done {
+            opacity: 0.5;
+        }
+
+        .task-item.done .task-name {
+            text-decoration: line-through;
+        }
+
+        .task-done {
+            width: 20px;
+            height: 20px;
+            margin-top: 2px;
+            flex-shrink: 0;
+            accent-color: #5856d6;
+            cursor: pointer;
+        }
+
+        .task-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .task-name {
+            font-weight: 600;
+            font-size: 15px;
+            color: #333;
+        }
+
+        .task-addr {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        .task-needs {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 13px;
+            color: #555;
+        }
+
+        .task-needs label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+        }
+
+        .task-needs input {
+            width: 16px;
+            height: 16px;
+            accent-color: #5856d6;
+        }
+
+        .task-boxspec {
+            width: 100%;
+            margin-top: 8px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px; /* 16px avoids iOS auto-zoom */
+        }
+
+        .task-side {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .task-time {
+            padding: 4px 6px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px; /* 16px avoids iOS auto-zoom */
+        }
+
+        .task-time.overdue {
+            border-color: #ff3b30;
+            color: #ff3b30;
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .task-btn {
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 2px 4px;
+        }
+
         .btn {
             flex: 1;
             padding: 10px 16px;
@@ -457,7 +571,29 @@
 
             <div class="button-group">
                 <button class="btn btn-primary" onclick="openMapWindow()">🗺️ Open Map</button>
+                <button class="btn btn-primary" onclick="openTaskModal()">📋 任務 (<span id="taskCount">0</span>)</button>
                 <button class="btn btn-primary" onclick="openManageModal()">⚙️ Manage Locations</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Task Modal -->
+    <div class="modal" id="taskModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📋 今日任務</h2>
+                <button class="close-btn" onclick="closeTaskModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                    <button class="small-btn" style="flex: 1; padding: 10px;" onclick="addSelectedToTasks()">＋ 加入已勾選點位</button>
+                    <button class="small-btn" style="flex: 1; padding: 10px;" onclick="clearDoneTasks()">清除已完成</button>
+                </div>
+                <div id="taskList"></div>
+                <div style="display: flex; gap: 8px; margin-top: 12px;">
+                    <button class="import-button" style="flex: 1;" onclick="openMapForPendingTasks()">🗺️ 開啟未完成地圖</button>
+                    <button class="small-btn delete" style="flex: 1;" onclick="clearAllTasks()">清空</button>
+                </div>
             </div>
         </div>
     </div>
@@ -878,13 +1014,193 @@
             }
         }
 
-        function openMapWindow() {
+        // ===== Daily task list (stored per browser, resets each day) =====
+        const TASK_KEY = 'dailyTasks';
+        let dailyTasks = [];
+
+        function todayStr() {
+            const d = new Date();
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+
+        function loadDailyTasks() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(TASK_KEY) || 'null');
+                dailyTasks = (saved && saved.date === todayStr() && Array.isArray(saved.tasks)) ? saved.tasks : [];
+            } catch (e) {
+                dailyTasks = [];
+            }
+            updateTaskCount();
+        }
+
+        function saveDailyTasks() {
+            try {
+                localStorage.setItem(TASK_KEY, JSON.stringify({ date: todayStr(), tasks: dailyTasks }));
+            } catch (e) {
+                console.error('Save tasks failed:', e);
+            }
+            updateTaskCount();
+        }
+
+        function updateTaskCount() {
+            const el = document.getElementById('taskCount');
+            if (el) el.textContent = dailyTasks.filter(t => !t.done).length;
+        }
+
+        function sortedTasks() {
+            return dailyTasks.slice().sort((a, b) => {
+                if (a.done !== b.done) return a.done ? 1 : -1;
+                if (a.time && b.time) return a.time.localeCompare(b.time);
+                if (a.time) return -1;
+                if (b.time) return 1;
+                return 0;
+            });
+        }
+
+        function addSelectedToTasks() {
             if (selectedLocations.length === 0) {
+                alert('請先在列表勾選點位');
+                return;
+            }
+            let added = 0;
+            selectedLocations.forEach(sel => {
+                if (dailyTasks.find(t => t.id === sel.id)) return;
+                const full = allLocations.find(l => l.id === sel.id) || sel;
+                dailyTasks.push({
+                    id: sel.id,
+                    code: full.code || '',
+                    name: full.name || '',
+                    address: full.address || '',
+                    lat: full.lat || 0,
+                    lng: full.lng || 0,
+                    time: '',
+                    needsCart: false,
+                    needsBox: false,
+                    done: false
+                });
+                added++;
+            });
+            saveDailyTasks();
+            renderDailyTasks();
+            alert(`已加入 ${added} 個點位`);
+        }
+
+        function renderDailyTasks() {
+            const list = document.getElementById('taskList');
+            if (!list) return;
+            if (dailyTasks.length === 0) {
+                list.innerHTML = '<div class="empty-state">尚未加入任務點位<br>請先在列表勾選點位，再按「加入已勾選點位」</div>';
+                return;
+            }
+            const nowHM = new Date().toTimeString().slice(0, 5);
+            list.innerHTML = sortedTasks().map(t => {
+                const overdue = !t.done && t.time && t.time < nowHM;
+                const boxInput = t.needsBox
+                    ? `<input type="text" class="task-boxspec" data-id="${t.id}" value="${escAttr(t.boxSpec)}" placeholder="紙箱格式／數量，例如 700 小4 中4 160">`
+                    : '';
+                return `
+                    <div class="task-item ${t.done ? 'done' : ''}">
+                        <input type="checkbox" class="task-done" data-id="${t.id}" ${t.done ? 'checked' : ''}>
+                        <div class="task-info">
+                            <div class="task-name">${t.name}</div>
+                            <div class="task-addr">${t.address}</div>
+                            <div class="task-needs">
+                                <label><input type="checkbox" class="task-cart" data-id="${t.id}" ${t.needsCart ? 'checked' : ''}> 推車</label>
+                                <label><input type="checkbox" class="task-box" data-id="${t.id}" ${t.needsBox ? 'checked' : ''}> 紙箱</label>
+                            </div>
+                            ${boxInput}
+                        </div>
+                        <div class="task-side">
+                            <input type="time" class="task-time ${overdue ? 'overdue' : ''}" data-id="${t.id}" value="${t.time}" title="時間限制（可留空）">
+                            <div class="task-actions">
+                                <button class="task-btn" data-action="map" data-id="${t.id}" title="導航">🗺️</button>
+                                <button class="task-btn" data-action="del" data-id="${t.id}" title="移除">🗑️</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function escAttr(s) {
+            return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+        }
+
+        function setupTaskListeners() {
+            const list = document.getElementById('taskList');
+            if (!list) return;
+            list.addEventListener('change', e => {
+                const id = e.target.dataset.id;
+                const task = dailyTasks.find(t => t.id === id);
+                if (!task) return;
+                if (e.target.classList.contains('task-done')) task.done = e.target.checked;
+                if (e.target.classList.contains('task-time')) task.time = e.target.value;
+                if (e.target.classList.contains('task-cart')) task.needsCart = e.target.checked;
+                if (e.target.classList.contains('task-box')) task.needsBox = e.target.checked;
+                if (e.target.classList.contains('task-boxspec')) task.boxSpec = e.target.value.trim();
+                saveDailyTasks();
+                renderDailyTasks();
+            });
+            list.addEventListener('click', e => {
+                const btn = e.target.closest('button[data-action]');
+                if (!btn) return;
+                const id = btn.dataset.id;
+                const task = dailyTasks.find(t => t.id === id);
+                if (!task) return;
+                if (btn.dataset.action === 'del') {
+                    if (!confirm('移除這個任務點位？')) return;
+                    dailyTasks = dailyTasks.filter(t => t.id !== id);
+                    saveDailyTasks();
+                    renderDailyTasks();
+                } else if (btn.dataset.action === 'map') {
+                    openLocationOnGoogleMaps(null, task.lat, task.lng, task.name, task.address);
+                }
+            });
+        }
+
+        function openTaskModal() {
+            document.getElementById('taskModal').classList.add('show');
+            renderDailyTasks();
+        }
+
+        function closeTaskModal() {
+            document.getElementById('taskModal').classList.remove('show');
+        }
+
+        function clearDoneTasks() {
+            if (!dailyTasks.some(t => t.done)) {
+                alert('沒有已完成的點位');
+                return;
+            }
+            dailyTasks = dailyTasks.filter(t => !t.done);
+            saveDailyTasks();
+            renderDailyTasks();
+        }
+
+        function clearAllTasks() {
+            if (!confirm('確定清空今天所有任務？')) return;
+            dailyTasks = [];
+            saveDailyTasks();
+            renderDailyTasks();
+        }
+
+        function openMapForPendingTasks() {
+            const pending = sortedTasks().filter(t => !t.done);
+            if (pending.length === 0) {
+                alert('沒有未完成的任務點位');
+                return;
+            }
+            openMapWindow(pending.map(t => ({ id: t.id, code: t.code, name: t.name, lat: t.lat, lng: t.lng })));
+        }
+
+        function openMapWindow(list) {
+            const locs = Array.isArray(list) ? list : selectedLocations;
+            if (locs.length === 0) {
                 alert('Please select at least one location');
                 return;
             }
 
-            localStorage.setItem('selectedLocationsForMap', JSON.stringify(selectedLocations));
+            localStorage.setItem('selectedLocationsForMap', JSON.stringify(locs));
 
             const mapHTML = `<!DOCTYPE html>
 <html lang="en">
@@ -996,6 +1312,8 @@
 
         // Initialize page
         window.addEventListener('load', async () => {
+            loadDailyTasks();
+            setupTaskListeners();
             await loadLocations();
             document.getElementById('searchInput').addEventListener('input', renderLocations);
         });
