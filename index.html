@@ -322,6 +322,16 @@
             color: #333;
         }
 
+        .box-row span {
+            white-space: nowrap;
+        }
+
+        .box-line {
+            font-size: 14px;
+            color: #333;
+            margin: 2px 0;
+        }
+
         .box-row input {
             width: 72px;
             padding: 6px;
@@ -331,12 +341,6 @@
             text-align: center;
         }
 
-        .task-boxsum {
-            font-size: 13px;
-            color: #5856d6;
-            font-weight: 600;
-            margin-top: 4px;
-        }
 
         .task-side {
             display: flex;
@@ -347,6 +351,7 @@
         }
 
         .task-time {
+            width: 130px;
             padding: 4px 6px;
             border: 1px solid #ddd;
             border-radius: 6px;
@@ -1196,16 +1201,23 @@
             );
         }
 
-        // Box rows: fixed format "[格式]紙箱 [數量]個", digits only
-        function boxSummary(t) {
-            return (t.boxes || [])
-                .filter(b => b.fmt && b.qty)
-                .map(b => `${b.fmt}紙箱 ${b.qty}個`)
-                .join('、');
-        }
-
+        // Box rows: fixed format "[格式]紙箱 [數量]個", digits only.
+        // Confirmed rows are read-only text until the user presses 編輯.
         function renderBoxRows(t) {
-            const rows = (t.boxes || []).map((b, i) => `
+            const boxes = t.boxes || [];
+            if (t.boxConfirmed) {
+                const lines = boxes
+                    .filter(b => b.fmt && b.qty)
+                    .map(b => `<div class="box-line">${b.fmt}紙箱 ${b.qty}個</div>`)
+                    .join('');
+                return `
+                    <div class="box-list">
+                        ${lines || '<div class="box-line" style="color: #999;">尚未填寫</div>'}
+                        <button class="small-btn" data-action="boxedit" data-id="${t.id}" style="margin-top: 6px;">✎ 編輯</button>
+                    </div>
+                `;
+            }
+            const rows = boxes.map((b, i) => `
                 <div class="box-row">
                     <input type="text" inputmode="numeric" class="box-fmt" data-id="${t.id}" data-idx="${i}" value="${escAttr(b.fmt)}" placeholder="格式">
                     <span>紙箱</span>
@@ -1217,8 +1229,10 @@
             return `
                 <div class="box-list">
                     ${rows}
-                    <button class="small-btn" data-action="boxadd" data-id="${t.id}" style="margin-top: 6px;">＋ 新增紙箱</button>
-                    <div class="task-boxsum">${boxSummary(t)}</div>
+                    <div style="display: flex; gap: 8px; margin-top: 6px;">
+                        <button class="small-btn" data-action="boxadd" data-id="${t.id}" style="flex: 1;">＋ 新增紙箱</button>
+                        <button class="small-btn" data-action="boxconfirm" data-id="${t.id}" style="flex: 1; background-color: #5856d6; color: white;">✓ 確認</button>
+                    </div>
                 </div>
             `;
         }
@@ -1263,8 +1277,6 @@
                 if (cleaned !== e.target.value) e.target.value = cleaned;
                 if (isFmt) row.fmt = cleaned; else row.qty = cleaned;
                 saveDailyTasks();
-                const sum = e.target.closest('.task-item').querySelector('.task-boxsum');
-                if (sum) sum.textContent = boxSummary(task);
             });
 
             list.addEventListener('click', e => {
@@ -1283,6 +1295,19 @@
                     const j = btn.dataset.action === 'up' ? i - 1 : i + 1;
                     if (i < 0 || j < 0 || j >= dailyTasks.length) return;
                     [dailyTasks[i], dailyTasks[j]] = [dailyTasks[j], dailyTasks[i]];
+                    saveDailyTasks();
+                    renderDailyTasks();
+                } else if (btn.dataset.action === 'boxconfirm') {
+                    task.boxes = (task.boxes || []).filter(b => b.fmt || b.qty);
+                    if (task.boxes.length === 0 || task.boxes.some(b => !b.fmt || !b.qty)) {
+                        alert('請填寫紙箱的格式與數量');
+                        return;
+                    }
+                    task.boxConfirmed = true;
+                    saveDailyTasks();
+                    renderDailyTasks();
+                } else if (btn.dataset.action === 'boxedit') {
+                    task.boxConfirmed = false;
                     saveDailyTasks();
                     renderDailyTasks();
                 } else if (btn.dataset.action === 'boxadd') {
