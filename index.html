@@ -1113,9 +1113,9 @@
             if (el) el.textContent = dailyTasks.filter(t => !t.done).length;
         }
 
-        // Tasks keep the order the user set (use ↑ ↓ to move them)
+        // Unfinished tasks first, completed tasks at the bottom; each group keeps the user's order
         function sortedTasks() {
-            return dailyTasks.slice();
+            return [...dailyTasks.filter(t => !t.done), ...dailyTasks.filter(t => t.done)];
         }
 
         function addSelectedToTasks() {
@@ -1154,9 +1154,10 @@
                 return;
             }
             const nowHM = new Date().toTimeString().slice(0, 5);
-            list.innerHTML = dailyTasks.map((t, idx) => {
-                const isFirst = idx === 0;
-                const isLast = idx === dailyTasks.length - 1;
+            list.innerHTML = sortedTasks().map(t => {
+                const group = sortedTasks().filter(x => x.done === t.done);
+                const isFirst = group[0].id === t.id;
+                const isLast = group[group.length - 1].id === t.id;
                 const overdue = !t.done && t.time && t.time < nowHM;
                 const hasCoords = t.lat && t.lng;
                 const distHtml = (userPos && hasCoords)
@@ -1319,10 +1320,14 @@
                     saveDailyTasks();
                     renderDailyTasks();
                 } else if (btn.dataset.action === 'up' || btn.dataset.action === 'down') {
-                    const i = dailyTasks.findIndex(t => t.id === id);
-                    const j = btn.dataset.action === 'up' ? i - 1 : i + 1;
-                    if (i < 0 || j < 0 || j >= dailyTasks.length) return;
-                    [dailyTasks[i], dailyTasks[j]] = [dailyTasks[j], dailyTasks[i]];
+                    // Move only within the same group (unfinished or completed)
+                    const group = sortedTasks().filter(x => x.done === task.done);
+                    const gi = group.findIndex(x => x.id === id);
+                    const gj = btn.dataset.action === 'up' ? gi - 1 : gi + 1;
+                    if (gi < 0 || gj < 0 || gj >= group.length) return;
+                    const ia = dailyTasks.indexOf(group[gi]);
+                    const ib = dailyTasks.indexOf(group[gj]);
+                    [dailyTasks[ia], dailyTasks[ib]] = [dailyTasks[ib], dailyTasks[ia]];
                     saveDailyTasks();
                     renderDailyTasks();
                 } else if (btn.dataset.action === 'boxconfirm') {
