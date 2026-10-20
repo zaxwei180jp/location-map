@@ -322,6 +322,24 @@
             font-size: 14px;
         }
 
+        /* Confirmed: text on the left, edit button on the same line at the right */
+        .box-confirmed {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .box-confirmed .box-lines {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .box-confirmed .small-btn {
+            padding: 6px 12px;
+            flex-shrink: 0;
+        }
+
         .box-row {
             display: flex;
             align-items: center;
@@ -1220,9 +1238,9 @@
                     .map(b => `<div class="box-line">${b.fmt}紙箱 ${b.qty}個</div>`)
                     .join('');
                 return `
-                    <div class="box-list">
-                        ${lines || '<div class="box-line" style="color: #999;">尚未填寫</div>'}
-                        <button class="small-btn" data-action="boxedit" data-id="${t.id}" style="margin-top: 6px;">✎ 編輯</button>
+                    <div class="box-list box-confirmed">
+                        <div class="box-lines">${lines || '<div class="box-line" style="color: #999;">尚未填寫</div>'}</div>
+                        <button class="small-btn" data-action="boxedit" data-id="${t.id}">✎ 編輯</button>
                     </div>
                 `;
             }
