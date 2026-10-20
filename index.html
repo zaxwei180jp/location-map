@@ -754,7 +754,8 @@
                 const itemsDiv = document.createElement('div');
                 itemsDiv.className = 'location-group-items';
                 itemsDiv.id = groupId;
-                itemsDiv.style.display = 'none';
+                // Auto-expand groups while searching so matches are visible
+                itemsDiv.style.display = searchTerm ? 'grid' : 'none';
 
                 locations.sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }))
                     .forEach(loc => {
