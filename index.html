@@ -238,6 +238,7 @@
         /* Daily task list */
         .task-item {
             display: flex;
+            flex-wrap: wrap;
             gap: 10px;
             align-items: flex-start;
             padding: 12px;
@@ -310,7 +311,15 @@
         }
 
         .box-list {
-            margin-top: 8px;
+            flex-basis: 100%;
+            width: 100%;
+            margin-top: 4px;
+        }
+
+        .box-list .small-btn {
+            white-space: nowrap;
+            padding: 10px 8px;
+            font-size: 14px;
         }
 
         .box-row {
@@ -1146,7 +1155,6 @@
                                 <label><input type="checkbox" class="task-cart" data-id="${t.id}" ${t.needsCart ? 'checked' : ''}> 推車</label>
                                 <label><input type="checkbox" class="task-box" data-id="${t.id}" ${t.needsBox ? 'checked' : ''}> 紙箱</label>
                             </div>
-                            ${boxHtml}
                         </div>
                         <div class="task-side">
                             <input type="time" class="task-time ${overdue ? 'overdue' : ''}" data-id="${t.id}" value="${t.time}" title="時間限制（可留空）">
@@ -1157,6 +1165,7 @@
                                 <button class="task-btn" data-action="del" data-id="${t.id}" title="移除">🗑️</button>
                             </div>
                         </div>
+                        ${boxHtml}
                     </div>
                 `;
             }).join('');
