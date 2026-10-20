@@ -281,6 +281,13 @@
             margin-top: 4px;
         }
 
+        .task-dist {
+            font-size: 13px;
+            font-weight: 600;
+            color: #5856d6;
+            margin-top: 4px;
+        }
+
         .task-needs {
             display: flex;
             gap: 12px;
@@ -589,6 +596,7 @@
                     <button class="small-btn" style="flex: 1; padding: 10px;" onclick="addSelectedToTasks()">＋ 加入已勾選點位</button>
                     <button class="small-btn" style="flex: 1; padding: 10px;" onclick="clearDoneTasks()">清除已完成</button>
                 </div>
+                <div id="locStatus" class="task-addr" style="margin-bottom: 8px;"></div>
                 <div id="taskList"></div>
                 <div style="display: flex; gap: 8px; margin-top: 12px;">
                     <button class="import-button" style="flex: 1;" onclick="openMapForPendingTasks()">🗺️ 開啟未完成地圖</button>
@@ -1095,6 +1103,10 @@
             const nowHM = new Date().toTimeString().slice(0, 5);
             list.innerHTML = sortedTasks().map(t => {
                 const overdue = !t.done && t.time && t.time < nowHM;
+                const hasCoords = t.lat && t.lng;
+                const distHtml = (userPos && hasCoords)
+                    ? `<div class="task-dist">📍 直線 ${formatDistance(distanceKm(userPos.lat, userPos.lng, t.lat, t.lng))}</div>`
+                    : '';
                 const boxInput = t.needsBox
                     ? `<input type="text" class="task-boxspec" data-id="${t.id}" value="${escAttr(t.boxSpec)}" placeholder="紙箱格式／數量，例如 700 小4 中4 160">`
                     : '';
@@ -1104,6 +1116,7 @@
                         <div class="task-info">
                             <div class="task-name">${t.name}</div>
                             <div class="task-addr">${t.address}</div>
+                            ${distHtml}
                             <div class="task-needs">
                                 <label><input type="checkbox" class="task-cart" data-id="${t.id}" ${t.needsCart ? 'checked' : ''}> 推車</label>
                                 <label><input type="checkbox" class="task-box" data-id="${t.id}" ${t.needsBox ? 'checked' : ''}> 紙箱</label>
@@ -1120,6 +1133,45 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        // ===== Current position & straight-line distance =====
+        let userPos = null;
+
+        function distanceKm(lat1, lng1, lat2, lng2) {
+            const R = 6371;
+            const toRad = d => d * Math.PI / 180;
+            const dLat = toRad(lat2 - lat1);
+            const dLng = toRad(lng2 - lng1);
+            const a = Math.sin(dLat / 2) ** 2 +
+                      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+            return 2 * R * Math.asin(Math.sqrt(a));
+        }
+
+        function formatDistance(km) {
+            return km < 1 ? Math.round(km * 1000) + ' m' : km.toFixed(1) + ' km';
+        }
+
+        function refreshUserPosition() {
+            const status = document.getElementById('locStatus');
+            if (!navigator.geolocation) {
+                if (status) status.textContent = '此裝置不支援定位';
+                return;
+            }
+            if (status) status.textContent = '定位中…';
+            navigator.geolocation.getCurrentPosition(
+                pos => {
+                    userPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    if (status) status.textContent = '距離為目前位置的直線距離';
+                    renderDailyTasks();
+                },
+                () => {
+                    userPos = null;
+                    if (status) status.textContent = '無法取得定位，請允許此網站使用定位';
+                    renderDailyTasks();
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+            );
         }
 
         function escAttr(s) {
@@ -1161,6 +1213,7 @@
         function openTaskModal() {
             document.getElementById('taskModal').classList.add('show');
             renderDailyTasks();
+            refreshUserPosition();
         }
 
         function closeTaskModal() {
