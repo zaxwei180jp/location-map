@@ -309,13 +309,33 @@
             accent-color: #5856d6;
         }
 
-        .task-boxspec {
-            width: 100%;
+        .box-list {
             margin-top: 8px;
-            padding: 8px;
+        }
+
+        .box-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 6px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .box-row input {
+            width: 72px;
+            padding: 6px;
             border: 1px solid #ddd;
             border-radius: 6px;
             font-size: 16px; /* 16px avoids iOS auto-zoom */
+            text-align: center;
+        }
+
+        .task-boxsum {
+            font-size: 13px;
+            color: #5856d6;
+            font-weight: 600;
+            margin-top: 4px;
         }
 
         .task-side {
@@ -341,6 +361,11 @@
         .task-actions {
             display: flex;
             gap: 4px;
+        }
+
+        .task-btn:disabled {
+            opacity: 0.25;
+            cursor: default;
         }
 
         .task-btn {
@@ -1055,14 +1080,9 @@
             if (el) el.textContent = dailyTasks.filter(t => !t.done).length;
         }
 
+        // Tasks keep the order the user set (use ↑ ↓ to move them)
         function sortedTasks() {
-            return dailyTasks.slice().sort((a, b) => {
-                if (a.done !== b.done) return a.done ? 1 : -1;
-                if (a.time && b.time) return a.time.localeCompare(b.time);
-                if (a.time) return -1;
-                if (b.time) return 1;
-                return 0;
-            });
+            return dailyTasks.slice();
         }
 
         function addSelectedToTasks() {
@@ -1101,15 +1121,15 @@
                 return;
             }
             const nowHM = new Date().toTimeString().slice(0, 5);
-            list.innerHTML = sortedTasks().map(t => {
+            list.innerHTML = dailyTasks.map((t, idx) => {
+                const isFirst = idx === 0;
+                const isLast = idx === dailyTasks.length - 1;
                 const overdue = !t.done && t.time && t.time < nowHM;
                 const hasCoords = t.lat && t.lng;
                 const distHtml = (userPos && hasCoords)
                     ? `<div class="task-dist">📍 直線 ${formatDistance(distanceKm(userPos.lat, userPos.lng, t.lat, t.lng))}</div>`
                     : '';
-                const boxInput = t.needsBox
-                    ? `<input type="text" class="task-boxspec" data-id="${t.id}" value="${escAttr(t.boxSpec)}" placeholder="紙箱格式／數量，例如 700 小4 中4 160">`
-                    : '';
+                const boxHtml = t.needsBox ? renderBoxRows(t) : '';
                 return `
                     <div class="task-item ${t.done ? 'done' : ''}">
                         <input type="checkbox" class="task-done" data-id="${t.id}" ${t.done ? 'checked' : ''}>
@@ -1121,11 +1141,13 @@
                                 <label><input type="checkbox" class="task-cart" data-id="${t.id}" ${t.needsCart ? 'checked' : ''}> 推車</label>
                                 <label><input type="checkbox" class="task-box" data-id="${t.id}" ${t.needsBox ? 'checked' : ''}> 紙箱</label>
                             </div>
-                            ${boxInput}
+                            ${boxHtml}
                         </div>
                         <div class="task-side">
                             <input type="time" class="task-time ${overdue ? 'overdue' : ''}" data-id="${t.id}" value="${t.time}" title="時間限制（可留空）">
                             <div class="task-actions">
+                                <button class="task-btn" data-action="up" data-id="${t.id}" title="上移" ${isFirst ? 'disabled' : ''}>↑</button>
+                                <button class="task-btn" data-action="down" data-id="${t.id}" title="下移" ${isLast ? 'disabled' : ''}>↓</button>
                                 <button class="task-btn" data-action="map" data-id="${t.id}" title="導航">🗺️</button>
                                 <button class="task-btn" data-action="del" data-id="${t.id}" title="移除">🗑️</button>
                             </div>
@@ -1174,6 +1196,33 @@
             );
         }
 
+        // Box rows: fixed format "[格式]紙箱 [數量]個", digits only
+        function boxSummary(t) {
+            return (t.boxes || [])
+                .filter(b => b.fmt && b.qty)
+                .map(b => `${b.fmt}紙箱 ${b.qty}個`)
+                .join('、');
+        }
+
+        function renderBoxRows(t) {
+            const rows = (t.boxes || []).map((b, i) => `
+                <div class="box-row">
+                    <input type="text" inputmode="numeric" class="box-fmt" data-id="${t.id}" data-idx="${i}" value="${escAttr(b.fmt)}" placeholder="格式">
+                    <span>紙箱</span>
+                    <input type="text" inputmode="numeric" class="box-qty" data-id="${t.id}" data-idx="${i}" value="${escAttr(b.qty)}" placeholder="數量">
+                    <span>個</span>
+                    <button class="task-btn" data-action="boxdel" data-id="${t.id}" data-idx="${i}" title="刪除">✕</button>
+                </div>
+            `).join('');
+            return `
+                <div class="box-list">
+                    ${rows}
+                    <button class="small-btn" data-action="boxadd" data-id="${t.id}" style="margin-top: 6px;">＋ 新增紙箱</button>
+                    <div class="task-boxsum">${boxSummary(t)}</div>
+                </div>
+            `;
+        }
+
         function escAttr(s) {
             return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
         }
@@ -1186,13 +1235,38 @@
                 const task = dailyTasks.find(t => t.id === id);
                 if (!task) return;
                 if (e.target.classList.contains('task-done')) task.done = e.target.checked;
-                if (e.target.classList.contains('task-time')) task.time = e.target.value;
+                // Time and box-spec inputs: save only, never re-render (re-rendering closes the time picker)
+                if (e.target.classList.contains('task-time')) {
+                    task.time = e.target.value;
+                    const nowHM = new Date().toTimeString().slice(0, 5);
+                    e.target.classList.toggle('overdue', !task.done && !!task.time && task.time < nowHM);
+                    saveDailyTasks();
+                    return;
+                }
                 if (e.target.classList.contains('task-cart')) task.needsCart = e.target.checked;
-                if (e.target.classList.contains('task-box')) task.needsBox = e.target.checked;
-                if (e.target.classList.contains('task-boxspec')) task.boxSpec = e.target.value.trim();
+                if (e.target.classList.contains('task-box')) {
+                    task.needsBox = e.target.checked;
+                    if (task.needsBox && !(task.boxes || []).length) task.boxes = [{ fmt: '', qty: '' }];
+                }
                 saveDailyTasks();
                 renderDailyTasks();
             });
+            // Box format/quantity: digits only, save while typing, no re-render (keeps keyboard open)
+            list.addEventListener('input', e => {
+                const isFmt = e.target.classList.contains('box-fmt');
+                const isQty = e.target.classList.contains('box-qty');
+                if (!isFmt && !isQty) return;
+                const task = dailyTasks.find(t => t.id === e.target.dataset.id);
+                const row = task && (task.boxes || [])[Number(e.target.dataset.idx)];
+                if (!row) return;
+                const cleaned = e.target.value.replace(/\D/g, '');
+                if (cleaned !== e.target.value) e.target.value = cleaned;
+                if (isFmt) row.fmt = cleaned; else row.qty = cleaned;
+                saveDailyTasks();
+                const sum = e.target.closest('.task-item').querySelector('.task-boxsum');
+                if (sum) sum.textContent = boxSummary(task);
+            });
+
             list.addEventListener('click', e => {
                 const btn = e.target.closest('button[data-action]');
                 if (!btn) return;
@@ -1202,6 +1276,22 @@
                 if (btn.dataset.action === 'del') {
                     if (!confirm('移除這個任務點位？')) return;
                     dailyTasks = dailyTasks.filter(t => t.id !== id);
+                    saveDailyTasks();
+                    renderDailyTasks();
+                } else if (btn.dataset.action === 'up' || btn.dataset.action === 'down') {
+                    const i = dailyTasks.findIndex(t => t.id === id);
+                    const j = btn.dataset.action === 'up' ? i - 1 : i + 1;
+                    if (i < 0 || j < 0 || j >= dailyTasks.length) return;
+                    [dailyTasks[i], dailyTasks[j]] = [dailyTasks[j], dailyTasks[i]];
+                    saveDailyTasks();
+                    renderDailyTasks();
+                } else if (btn.dataset.action === 'boxadd') {
+                    task.boxes = task.boxes || [];
+                    task.boxes.push({ fmt: '', qty: '' });
+                    saveDailyTasks();
+                    renderDailyTasks();
+                } else if (btn.dataset.action === 'boxdel') {
+                    (task.boxes || []).splice(Number(btn.dataset.idx), 1);
                     saveDailyTasks();
                     renderDailyTasks();
                 } else if (btn.dataset.action === 'map') {
