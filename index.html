@@ -623,6 +623,21 @@
         .rec-no { font-weight: 700; text-align: center; background: #fbf8f3; border-radius: 8px; padding: 6px 0; }
         .rec-code { word-break: break-all; }
         .rec-qty { text-align: right; font-weight: 600; }
+        .rec-table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0 6px; font-size: 15px; }
+        .rec-table th { font-size: 13px; color: #8a817a; font-weight: 600; text-align: left; padding: 0 8px; }
+        .rec-table td { background: #f4efe8; padding: 10px 8px; vertical-align: middle; }
+        .rec-table td:first-child { border-radius: 10px 0 0 10px; }
+        .rec-table td:last-child { border-radius: 0 10px 10px 0; }
+        .rec-table .c-no { text-align: center; }
+        .rec-table td.c-no { background: #fbf8f3; font-weight: 700; }
+        .rec-table .c-qty { text-align: right; }
+        .rec-table td.c-qty { font-weight: 600; white-space: nowrap; }
+        .rec-table td.c-name { word-break: break-all; }
+        .slip-table { width: 100%; border-collapse: collapse; font-size: 16px; }
+        .slip-table th { background: #d8cfc4; color: #5e5650; font-weight: 600; font-size: 14px; padding: 9px 10px; text-align: left; }
+        .slip-table td { padding: 11px 10px; border-top: 1px solid #d9cfc2; }
+        .slip-table .num { text-align: right; white-space: nowrap; }
+        .slip-table tfoot td { background: #e4dcd0; font-weight: 700; color: #7d8b78; }
         .rec-btn { background: none; border: none; color: #7d8b78; font-size: 15px; font-weight: 600; padding: 0; cursor: pointer; }
         .slip-sheet { background: #f4efe8; border: 1px solid #d6cbbd; border-radius: 12px; padding: 14px; }
         .slip-address { font-size: 13px; color: #8a817a; margin-bottom: 10px; }
@@ -1591,13 +1606,13 @@
         function finishPickup(result) {
             const t = pickupDraft.task;
             const date = todayStr();
-            const base = () => ({ id: newRowId(), date, taskId: t.id, address: t.address || '', method: methodOf(t), synced: false });
+            const base = () => ({ id: newRowId(), date, taskId: t.id, name: t.name || t.code || '', address: t.address || '', method: methodOf(t), synced: false });
             let rows;
             if (result.entries) {
                 rows = result.entries.map(e => ({ ...base(), code: e.code, pickupCount: '', slipNo: e.slipNo, qty: e.qty }));
                 t.pickup = { method: '方式二', entries: result.entries };
             } else {
-                rows = [{ ...base(), code: t.name || t.code || '', pickupCount: result.pickupCount, slipNo: '', qty: '' }];
+                rows = [{ ...base(), code: '', pickupCount: result.pickupCount, slipNo: '', qty: '' }];
                 t.pickup = { method: '方式一', pickupCount: result.pickupCount };
             }
             // Replace this task's earlier unsynced rows (e.g. after re-completing); keep synced history
@@ -1651,7 +1666,7 @@
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            date: r.date, code: r.code, address: r.address, method: r.method,
+                            date: r.date, name: r.name, code: r.code, address: r.address, method: r.method,
                             pickupCount: r.pickupCount, slipNo: r.slipNo, qty: r.qty
                         })
                     });
@@ -1697,22 +1712,22 @@
             }
             if (!rows) {
                 rows = pickupLog.filter(r => r.date === date).map(r => ({
-                    code: r.code, address: r.address, method: r.method,
+                    name: r.name || r.code, code: r.name ? (r.code || '') : '', address: r.address, method: r.method,
                     pickupCount: r.pickupCount, slipNo: r.slipNo, qty: r.qty
                 }));
             }
             renderRecords(rows, date, source);
         }
 
-        // Consecutive rows with the same customer/address/method belong to one visit (one point)
+        // Consecutive rows with the same place (name) and method belong to one visit
         function groupVisits(rows) {
             const groups = [];
             rows.forEach(r => {
                 const last = groups[groups.length - 1];
-                if (last && last.code === r.code && last.address === r.address && last.method === r.method) {
+                if (last && last.name === r.name && last.method === r.method) {
                     last.rows.push(r);
                 } else {
-                    groups.push({ code: r.code, address: r.address, method: r.method, rows: [r] });
+                    groups.push({ name: r.name, method: r.method, rows: [r] });
                 }
             });
             return groups;
@@ -1727,26 +1742,34 @@
             const m2 = rows.filter(r => r.method === '方式二');
             const pickupTotal = m1.reduce((a, r) => a + (Number(r.pickupCount) || 0), 0);
             const qtyTotal = m2.reduce((a, r) => a + (Number(r.qty) || 0), 0);
-            const groups = groupVisits(rows);
-            recordGroups = groups;
-            const table = groups.length ? `
-                <div class="rec-grid rec-head"><div>順序</div><div>客戶編號</div><div>件數</div><div>詳情</div></div>
-                ${groups.map((g, i) => {
-                    const isTwo = g.method === '方式二';
-                    const count = isTwo
-                        ? g.rows.reduce((a, r) => a + (Number(r.qty) || 0), 0)
-                        : (Number(g.rows[0].pickupCount) || 0);
-                    const detail = isTwo
-                        ? `<button class="rec-btn" data-group="${i}">詳情 ›</button>`
-                        : '';
-                    return `
-                    <div class="rec-grid rec-row">
-                        <div class="rec-no">${i + 1}</div>
-                        <div class="rec-code">${esc(g.code)}</div>
-                        <div class="rec-qty">${count} 件</div>
-                        <div class="rec-detail">${detail}</div>
-                    </div>`;
-                }).join('')}` : '';
+            recordGroups = groupVisits(rows);
+            const table = recordGroups.length ? `
+                <table class="rec-table">
+                    <colgroup>
+                        <col style="width: 52px;">
+                        <col>
+                        <col style="width: 72px;">
+                        <col style="width: 84px;">
+                    </colgroup>
+                    <thead>
+                        <tr><th class="c-no">順序</th><th>地點</th><th class="c-qty">件數</th><th>詳情</th></tr>
+                    </thead>
+                    <tbody>
+                        ${recordGroups.map((g, i) => {
+                            const isTwo = g.method === '方式二';
+                            const count = isTwo
+                                ? g.rows.reduce((a, r) => a + (Number(r.qty) || 0), 0)
+                                : (Number(g.rows[0].pickupCount) || 0);
+                            return `
+                            <tr>
+                                <td class="c-no">${i + 1}</td>
+                                <td class="c-name">${esc(g.name)}</td>
+                                <td class="c-qty">${count} 件</td>
+                                <td>${isTwo ? `<button class="rec-btn" data-group="${i}">詳情 ›</button>` : ''}</td>
+                            </tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>` : '';
             document.getElementById('recordsBody').innerHTML = `
                 <div class="task-addr">資料來源：${source}${pending ? `｜本機尚有 ${pending} 筆未同步` : ''}</div>
                 <div class="pk-entry">共 ${rows.length} 筆｜方式一收取 ${pickupTotal} 件｜方式二 ${m2.length} 筆、${qtyTotal} 件</div>
@@ -1758,15 +1781,21 @@
             if (!g) return;
             const esc = v => escAttr(String(v ?? ''));
             const total = g.rows.reduce((a, r) => a + (Number(r.qty) || 0), 0);
-            document.getElementById('detailTitle').textContent = `📑 ${g.code || '—'}`;
+            document.getElementById('detailTitle').textContent = `📑 ${g.name || '—'}`;
             document.getElementById('detailBody').innerHTML = `
                 <div class="slip-sheet">
-                    <div class="slip-address">${esc(g.address)}</div>
-                    <div class="slip-table">
-                        <div class="slip-row slip-th"><div>傳票編號</div><div>件數</div></div>
-                        ${g.rows.map(r => `<div class="slip-row"><div>${esc(r.slipNo)}</div><div>${esc(r.qty)} 件</div></div>`).join('')}
-                        <div class="slip-row slip-total"><div>合計</div><div>${total} 件</div></div>
-                    </div>
+                    <table class="slip-table">
+                        <colgroup>
+                            <col style="width: 34%;">
+                            <col>
+                            <col style="width: 72px;">
+                        </colgroup>
+                        <thead><tr><th>客戶編號</th><th>傳票編號</th><th class="num">件數</th></tr></thead>
+                        <tbody>
+                            ${g.rows.map(r => `<tr><td>${esc(r.code)}</td><td>${esc(r.slipNo)}</td><td class="num">${esc(r.qty)} 件</td></tr>`).join('')}
+                        </tbody>
+                        <tfoot><tr><td colspan="2">合計</td><td class="num">${total} 件</td></tr></tfoot>
+                    </table>
                 </div>`;
             document.getElementById('detailModal').classList.add('show');
         }
