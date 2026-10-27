@@ -614,6 +614,8 @@
         .pk-input { width: 100%; font-size: 16px; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
         .pk-row { display: flex; gap: 8px; margin-top: 16px; }
         .pk-row > button { flex: 1; padding: 12px; }
+        .pk-entry-row { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+        .pk-entry-btns { display: flex; gap: 4px; flex-shrink: 0; }
         .pk-entry { padding: 8px 10px; background: #f3f6fb; border-radius: 8px; margin-bottom: 6px; font-size: 15px; }
         .rec-grid { display: grid; grid-template-columns: 44px 1fr 72px 80px; gap: 6px; align-items: center; }
         .rec-head { font-weight: 600; color: #666; font-size: 13px; padding: 0 10px; margin-top: 12px; }
@@ -1461,7 +1463,7 @@
         function openPickupModal(id) {
             const task = dailyTasks.find(t => t.id === id);
             if (!task) return;
-            pickupDraft = { task, entries: [], awaiting: false };
+            pickupDraft = { task, entries: [], awaiting: false, editIndex: null };
             document.getElementById('pickupModal').classList.add('show');
             renderPickupModal();
         }
@@ -1479,33 +1481,74 @@
             const body = document.getElementById('pickupBody');
 
             if (methodOf(t) === '方式二') {
+                const editing = d.editIndex !== null && d.editIndex !== undefined;
                 const list = d.entries.map((e, i) =>
-                    `<div class="pk-entry">#${i + 1}　客戶 ${escAttr(e.code)}　傳票 ${escAttr(e.slipNo)}　${escAttr(e.qty)} 件</div>`
+                    `<div class="pk-entry pk-entry-row">
+                        <span>#${i + 1}　客戶 ${escAttr(e.code)}　傳票 ${escAttr(e.slipNo)}　${escAttr(e.qty)} 件</span>
+                        <span class="pk-entry-btns">
+                            <button class="task-btn" data-pk="edit" data-i="${i}">編輯</button>
+                            <button class="task-btn" data-pk="del" data-i="${i}">刪除</button>
+                        </span>
+                    </div>`
                 ).join('');
-                const buttons = d.awaiting
-                    ? `<button class="small-btn" id="pkContinue">繼續輸入</button><button class="import-button" id="pkEnd">結束</button>`
-                    : `<button class="small-btn" id="pkCancel">取消</button><button class="import-button" id="pkSave">儲存這筆</button>`;
+                const cur = editing ? d.entries[d.editIndex] : { code: t.code || '', slipNo: '', qty: '' };
+                const buttons = editing
+                    ? `<button class="small-btn" id="pkCancelEdit">取消修改</button><button class="import-button" id="pkUpdate">更新這筆</button>`
+                    : d.awaiting
+                        ? `<button class="small-btn" id="pkContinue">繼續輸入</button><button class="import-button" id="pkEnd">結束</button>`
+                        : `<button class="small-btn" id="pkCancel">取消</button><button class="import-button" id="pkSave">儲存這筆</button>`;
                 body.innerHTML = `
                     ${list ? `<div>${list}</div>` : ''}
                     <label class="pk-label">客戶編號</label>
-                    <input class="pk-input" id="pkCode" value="${escAttr(t.code)}">
+                    <input class="pk-input" id="pkCode" value="${escAttr(cur.code)}">
                     <label class="pk-label">傳票編號</label>
-                    <input class="pk-input" id="pkSlip" inputmode="numeric">
+                    <input class="pk-input" id="pkSlip" inputmode="numeric" value="${escAttr(cur.slipNo)}">
                     <label class="pk-label">件數</label>
-                    <input class="pk-input" id="pkQty" inputmode="numeric">
+                    <input class="pk-input" id="pkQty" inputmode="numeric" value="${escAttr(cur.qty)}">
                     <div class="pk-row">${buttons}</div>`;
-                if (d.awaiting) {
+
+                body.querySelectorAll('[data-pk]').forEach(btn => {
+                    const i = Number(btn.dataset.i);
+                    btn.onclick = () => {
+                        if (btn.dataset.pk === 'edit') {
+                            d.editIndex = i;
+                        } else {
+                            d.entries.splice(i, 1);
+                            d.editIndex = null;
+                            if (!d.entries.length) d.awaiting = false;
+                        }
+                        renderPickupModal();
+                    };
+                });
+
+                const readForm = () => {
+                    const code = document.getElementById('pkCode').value.trim();
+                    const slipNo = document.getElementById('pkSlip').value.trim();
+                    const qty = document.getElementById('pkQty').value.trim();
+                    if (!slipNo && !qty) { alert('請輸入傳票編號或件數'); return null; }
+                    if (qty && !/^\d+$/.test(qty)) { alert('件數請輸入數字'); return null; }
+                    return { code, slipNo, qty };
+                };
+
+                if (editing) {
+                    document.getElementById('pkCancelEdit').onclick = () => { d.editIndex = null; renderPickupModal(); };
+                    document.getElementById('pkUpdate').onclick = () => {
+                        const entry = readForm();
+                        if (!entry) return;
+                        d.entries[d.editIndex] = entry;
+                        d.editIndex = null;
+                        d.awaiting = true;
+                        renderPickupModal();
+                    };
+                } else if (d.awaiting) {
                     document.getElementById('pkContinue').onclick = () => { d.awaiting = false; renderPickupModal(); };
                     document.getElementById('pkEnd').onclick = () => finishPickup({ entries: d.entries });
                 } else {
                     document.getElementById('pkCancel').onclick = closePickupModal;
                     document.getElementById('pkSave').onclick = () => {
-                        const code = document.getElementById('pkCode').value.trim();
-                        const slipNo = document.getElementById('pkSlip').value.trim();
-                        const qty = document.getElementById('pkQty').value.trim();
-                        if (!slipNo && !qty) { alert('請輸入傳票編號或件數'); return; }
-                        if (qty && !/^\d+$/.test(qty)) { alert('件數請輸入數字'); return; }
-                        d.entries.push({ code, slipNo, qty });
+                        const entry = readForm();
+                        if (!entry) return;
+                        d.entries.push(entry);
                         d.awaiting = true;
                         renderPickupModal();
                     };
