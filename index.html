@@ -615,6 +615,14 @@
         .pk-row { display: flex; gap: 8px; margin-top: 16px; }
         .pk-row > button { flex: 1; padding: 12px; }
         .pk-entry { padding: 8px 10px; background: #f3f6fb; border-radius: 8px; margin-bottom: 6px; font-size: 15px; }
+        .rec-grid { display: grid; grid-template-columns: 44px 1fr 72px 80px; gap: 6px; align-items: center; }
+        .rec-head { font-weight: 600; color: #666; font-size: 13px; padding: 0 10px; margin-top: 12px; }
+        .rec-row { background: #f3f6fb; border-radius: 10px; padding: 10px; margin-top: 6px; font-size: 15px; }
+        .rec-no { font-weight: 700; text-align: center; background: #fff; border-radius: 8px; padding: 6px 0; }
+        .rec-code { word-break: break-all; }
+        .rec-qty { text-align: right; font-weight: 600; }
+        .rec-detail summary { cursor: pointer; color: #1a73e8; }
+        .rec-detail details > div { padding: 4px 0; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -1635,6 +1643,20 @@
             renderRecords(rows, date, source);
         }
 
+        // Consecutive rows with the same customer/address/method belong to one visit (one point)
+        function groupVisits(rows) {
+            const groups = [];
+            rows.forEach(r => {
+                const last = groups[groups.length - 1];
+                if (last && last.code === r.code && last.address === r.address && last.method === r.method) {
+                    last.rows.push(r);
+                } else {
+                    groups.push({ code: r.code, address: r.address, method: r.method, rows: [r] });
+                }
+            });
+            return groups;
+        }
+
         function renderRecords(rows, date, source) {
             const esc = v => escAttr(String(v ?? ''));
             const pending = pickupLog.filter(r => r.date === date && !r.synced).length;
@@ -1642,14 +1664,29 @@
             const m2 = rows.filter(r => r.method === '方式二');
             const pickupTotal = m1.reduce((a, r) => a + (Number(r.pickupCount) || 0), 0);
             const qtyTotal = m2.reduce((a, r) => a + (Number(r.qty) || 0), 0);
-            const items = rows.map(r => r.method === '方式二'
-                ? `<div class="pk-entry">方式二｜客戶 ${esc(r.code)}｜傳票 ${esc(r.slipNo)}｜${esc(r.qty)} 件<div class="task-addr">${esc(r.address)}</div></div>`
-                : `<div class="pk-entry">方式一｜客戶 ${esc(r.code)}｜收取 ${esc(r.pickupCount)} 件<div class="task-addr">${esc(r.address)}</div></div>`
-            ).join('');
+            const groups = groupVisits(rows);
+            const table = groups.length ? `
+                <div class="rec-grid rec-head"><div>順序</div><div>客戶編號</div><div>件數</div><div>詳情</div></div>
+                ${groups.map((g, i) => {
+                    const isTwo = g.method === '方式二';
+                    const count = isTwo
+                        ? g.rows.reduce((a, r) => a + (Number(r.qty) || 0), 0)
+                        : (Number(g.rows[0].pickupCount) || 0);
+                    const detail = isTwo
+                        ? `<details><summary>詳情</summary>${g.rows.map(r => `<div>傳票 ${esc(r.slipNo)}　${esc(r.qty)} 件</div>`).join('')}</details>`
+                        : '';
+                    return `
+                    <div class="rec-grid rec-row">
+                        <div class="rec-no">${i + 1}</div>
+                        <div class="rec-code">${esc(g.code)}</div>
+                        <div class="rec-qty">${count} 件</div>
+                        <div class="rec-detail">${detail}</div>
+                    </div>`;
+                }).join('')}` : '';
             document.getElementById('recordsBody').innerHTML = `
                 <div class="task-addr">資料來源：${source}${pending ? `｜本機尚有 ${pending} 筆未同步` : ''}</div>
                 <div class="pk-entry">共 ${rows.length} 筆｜方式一收取 ${pickupTotal} 件｜方式二 ${m2.length} 筆、${qtyTotal} 件</div>
-                ${items || '<div class="empty-state">這一天沒有收件紀錄</div>'}`;
+                ${table || '<div class="empty-state">這一天沒有收件紀錄</div>'}`;
         }
 
         function clearDoneTasks() {
