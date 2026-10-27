@@ -658,6 +658,8 @@
                     <button class="small-btn" style="flex: 1; padding: 10px;" onclick="addSelectedToTasks()">＋ 加入已勾選點位</button>
                     <button class="small-btn" style="flex: 1; padding: 10px;" onclick="clearDoneTasks()">清除已完成</button>
                 </div>
+                <button class="small-btn" style="width: 100%; padding: 10px; margin-bottom: 8px;" onclick="openRecordsModal()">🔎 查詢每日收貨紀錄</button>
+                <button class="small-btn" style="width: 100%; padding: 10px; margin-bottom: 8px;" onclick="uploadTodayPickups()">⬆️ 上傳今日收件紀錄</button>
                 <div id="locStatus" class="task-addr" style="margin-bottom: 8px;"></div>
                 <div id="taskList"></div>
                 <div style="display: flex; gap: 8px; margin-top: 12px;">
@@ -679,6 +681,23 @@
                 <button class="close-btn" onclick="closePickupModal()">×</button>
             </div>
             <div class="modal-body" id="pickupBody"></div>
+        </div>
+    </div>
+
+    <!-- Records Query Modal -->
+    <div class="modal" id="recordsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🔎 每日收貨紀錄</h2>
+                <button class="close-btn" onclick="closeRecordsModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="pk-row" style="margin-top: 0; align-items: center;">
+                    <input type="date" class="pk-input" id="recordsDate" style="flex: 1;" onchange="loadRecords()">
+                    <button class="import-button" onclick="loadRecords()">查詢</button>
+                </div>
+                <div id="recordsBody" style="margin-top: 12px;"></div>
+            </div>
         </div>
     </div>
 
@@ -1519,7 +1538,31 @@
             closePickupModal();
             saveDailyTasks();
             renderDailyTasks();
-            syncPickupLog();
+            maybePromptUpload();
+        }
+
+        // Called after each completion: when every task of the day is done, offer to upload
+        function maybePromptUpload() {
+            const allDone = dailyTasks.length > 0 && dailyTasks.every(t => t.done);
+            const hasPending = pickupLog.some(r => !r.synced && r.date === todayStr());
+            if (allDone && hasPending) {
+                if (confirm('今天的任務都已完成，要上傳今日收件紀錄到 Notion 嗎？')) {
+                    uploadTodayPickups();
+                }
+            }
+        }
+
+        // Manual upload (button or confirmed after the day is finished)
+        async function uploadTodayPickups() {
+            if (!CONFIG.recordsDatabaseId) { alert('尚未設定收件記錄資料庫'); return; }
+            if (!navigator.onLine) { alert('目前沒有網路，請連線後再上傳'); return; }
+            const before = pickupLog.filter(r => !r.synced && r.date === todayStr()).length;
+            if (!before) { alert('沒有需要上傳的收件紀錄'); return; }
+            await syncPickupLog();
+            const left = pickupLog.filter(r => !r.synced && r.date === todayStr()).length;
+            alert(left
+                ? `上傳中斷，已上傳 ${before - left} 筆，尚有 ${left} 筆未上傳，請稍後再按一次`
+                : `已上傳 ${before} 筆收件紀錄`);
         }
 
         function uncompleteTask(task) {
@@ -1534,7 +1577,7 @@
             if (pickupSyncing || !CONFIG.recordsDatabaseId || !navigator.onLine) return;
             pickupSyncing = true;
             try {
-                for (const r of pickupLog.filter(x => !x.synced)) {
+                for (const r of pickupLog.filter(x => !x.synced && x.date === todayStr())) {
                     const res = await fetch(`${CONFIG.cloudflareWorkerUrl}/records?database_id=${CONFIG.recordsDatabaseId}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -1553,6 +1596,60 @@
             } finally {
                 pickupSyncing = false;
             }
+        }
+
+        // ===== Query daily pickup records =====
+        function openRecordsModal() {
+            const input = document.getElementById('recordsDate');
+            if (!input.value) input.value = todayStr();
+            document.getElementById('recordsModal').classList.add('show');
+            loadRecords();
+        }
+
+        function closeRecordsModal() {
+            document.getElementById('recordsModal').classList.remove('show');
+        }
+
+        async function loadRecords() {
+            const date = document.getElementById('recordsDate').value || todayStr();
+            document.getElementById('recordsBody').innerHTML = '<div class="task-addr">查詢中…</div>';
+            let rows = null;
+            let source = '本機';
+            if (CONFIG.recordsDatabaseId && navigator.onLine) {
+                try {
+                    const res = await fetch(`${CONFIG.cloudflareWorkerUrl}/records?database_id=${CONFIG.recordsDatabaseId}&date=${date}`);
+                    if (res.ok) {
+                        rows = await res.json();
+                        source = 'Notion';
+                    }
+                } catch (e) {
+                    console.error('Query records failed:', e);
+                }
+            }
+            if (!rows) {
+                rows = pickupLog.filter(r => r.date === date).map(r => ({
+                    code: r.code, address: r.address, method: r.method,
+                    pickupCount: r.pickupCount, slipNo: r.slipNo, qty: r.qty
+                }));
+            }
+            renderRecords(rows, date, source);
+        }
+
+        function renderRecords(rows, date, source) {
+            const esc = v => escAttr(String(v ?? ''));
+            const pending = pickupLog.filter(r => r.date === date && !r.synced).length;
+            const m1 = rows.filter(r => r.method !== '方式二');
+            const m2 = rows.filter(r => r.method === '方式二');
+            const pickupTotal = m1.reduce((a, r) => a + (Number(r.pickupCount) || 0), 0);
+            const qtyTotal = m2.reduce((a, r) => a + (Number(r.qty) || 0), 0);
+            const items = rows.map(r => r.method === '方式二'
+                ? `<div class="pk-entry">方式二｜客戶 ${esc(r.code)}｜傳票 ${esc(r.slipNo)}｜${esc(r.qty)} 件<div class="task-addr">${esc(r.address)}</div></div>`
+                : `<div class="pk-entry">方式一｜客戶 ${esc(r.code)}｜收取 ${esc(r.pickupCount)} 件<div class="task-addr">${esc(r.address)}</div></div>`
+            ).join('');
+            document.getElementById('recordsBody').innerHTML = `
+                <div class="task-addr">資料來源：${source}${pending ? `｜本機尚有 ${pending} 筆未同步` : ''}</div>
+                <div class="pk-entry">共 ${rows.length} 筆｜方式一收取 ${pickupTotal} 件｜方式二 ${m2.length} 筆、${qtyTotal} 件</div>
+                ${items || '<div class="empty-state">這一天沒有收件紀錄</div>'}`;
         }
 
         function clearDoneTasks() {
@@ -1742,8 +1839,6 @@
             loadDailyTasks();
             setupTaskListeners();
             loadPickupLog();
-            syncPickupLog();
-            window.addEventListener('online', syncPickupLog);
             await loadLocations();
             document.getElementById('searchInput').addEventListener('input', renderLocations);
         });
