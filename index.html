@@ -610,6 +610,11 @@
             color: #999;
             font-size: 14px;
         }
+        .pk-label { display: block; font-weight: 600; margin: 10px 0 4px; }
+        .pk-input { width: 100%; font-size: 16px; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+        .pk-row { display: flex; gap: 8px; margin-top: 16px; }
+        .pk-row > button { flex: 1; padding: 12px; }
+        .pk-entry { padding: 8px 10px; background: #f3f6fb; border-radius: 8px; margin-bottom: 6px; font-size: 15px; }
     </style>
 </head>
 <body>
@@ -663,6 +668,20 @@
         </div>
     </div>
 
+    <!-- Pickup Record Modal -->
+    <div class="modal" id="pickupModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h2>📦 收件記錄</h2>
+                    <div class="task-addr" id="pickupSub"></div>
+                </div>
+                <button class="close-btn" onclick="closePickupModal()">×</button>
+            </div>
+            <div class="modal-body" id="pickupBody"></div>
+        </div>
+    </div>
+
     <!-- Manage Modal -->
     <div class="modal" id="manageModal">
         <div class="modal-content">
@@ -697,6 +716,7 @@
         const CONFIG = {
             notionDatabaseId: '3d75bfd83387806b882bfdeb4ca2e7e9',
             cloudflareWorkerUrl: 'https://throbbing-feather-5f4c.zaxwei180jp.workers.dev',
+            recordsDatabaseId: '4065bfd833878057aecadd6446d2d8bc', // 每日收件記錄資料庫
         };
 
         let allLocations = [];
@@ -1138,6 +1158,7 @@
                     time: '',
                     needsCart: false,
                     needsBox: false,
+                    method: full.method || '方式一',
                     done: false
                 });
                 added++;
@@ -1278,7 +1299,17 @@
                 const id = e.target.dataset.id;
                 const task = dailyTasks.find(t => t.id === id);
                 if (!task) return;
-                if (e.target.classList.contains('task-done')) task.done = e.target.checked;
+                if (e.target.classList.contains('task-done')) {
+                    if (e.target.checked) {
+                        e.target.checked = false; // stays unchecked until the pickup record is saved
+                        openPickupModal(task.id);
+                        return;
+                    }
+                    if (pickupLog.some(r => r.taskId === task.id && r.synced)) {
+                        alert('此點位的收件紀錄已同步到 Notion，重新勾選會再新增一次，請到 Notion 手動刪除舊紀錄。');
+                    }
+                    uncompleteTask(task);
+                }
                 // Time and box-spec inputs: save only, never re-render (re-rendering closes the time picker)
                 if (e.target.classList.contains('task-time')) {
                     task.time = e.target.value;
@@ -1367,6 +1398,161 @@
 
         function closeTaskModal() {
             document.getElementById('taskModal').classList.remove('show');
+        }
+
+        // ===== Pickup records (收件記錄) =====
+        const PICKUP_KEY = 'pickupLog';
+        let pickupLog = [];
+        let pickupDraft = null; // { task, entries: [], awaiting: false }
+        let pickupSyncing = false;
+
+        function loadPickupLog() {
+            try {
+                pickupLog = JSON.parse(localStorage.getItem(PICKUP_KEY) || '[]');
+                if (!Array.isArray(pickupLog)) pickupLog = [];
+            } catch (e) {
+                pickupLog = [];
+            }
+        }
+
+        function savePickupLog() {
+            try {
+                localStorage.setItem(PICKUP_KEY, JSON.stringify(pickupLog));
+            } catch (e) {
+                console.error('Save pickup log failed:', e);
+            }
+        }
+
+        function newRowId() {
+            return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+        }
+
+        function methodOf(t) {
+            return t.method === '方式二' ? '方式二' : '方式一';
+        }
+
+        function openPickupModal(id) {
+            const task = dailyTasks.find(t => t.id === id);
+            if (!task) return;
+            pickupDraft = { task, entries: [], awaiting: false };
+            document.getElementById('pickupModal').classList.add('show');
+            renderPickupModal();
+        }
+
+        function closePickupModal() {
+            document.getElementById('pickupModal').classList.remove('show');
+            pickupDraft = null;
+        }
+
+        function renderPickupModal() {
+            const d = pickupDraft;
+            if (!d) return;
+            const t = d.task;
+            document.getElementById('pickupSub').textContent = (t.code ? t.code + ' · ' : '') + t.name;
+            const body = document.getElementById('pickupBody');
+
+            if (methodOf(t) === '方式二') {
+                const list = d.entries.map((e, i) =>
+                    `<div class="pk-entry">#${i + 1}　客戶 ${escAttr(e.code)}　傳票 ${escAttr(e.slipNo)}　${escAttr(e.qty)} 件</div>`
+                ).join('');
+                const buttons = d.awaiting
+                    ? `<button class="small-btn" id="pkContinue">繼續輸入</button><button class="import-button" id="pkEnd">結束</button>`
+                    : `<button class="small-btn" id="pkCancel">取消</button><button class="import-button" id="pkSave">儲存這筆</button>`;
+                body.innerHTML = `
+                    ${list ? `<div>${list}</div>` : ''}
+                    <label class="pk-label">客戶編號</label>
+                    <input class="pk-input" id="pkCode" inputmode="numeric" value="${escAttr(t.code)}">
+                    <label class="pk-label">傳票編號</label>
+                    <input class="pk-input" id="pkSlip" inputmode="numeric">
+                    <label class="pk-label">件數</label>
+                    <input class="pk-input" id="pkQty" inputmode="numeric">
+                    <div class="pk-row">${buttons}</div>`;
+                if (d.awaiting) {
+                    document.getElementById('pkContinue').onclick = () => { d.awaiting = false; renderPickupModal(); };
+                    document.getElementById('pkEnd').onclick = () => finishPickup({ entries: d.entries });
+                } else {
+                    document.getElementById('pkCancel').onclick = closePickupModal;
+                    document.getElementById('pkSave').onclick = () => {
+                        const code = document.getElementById('pkCode').value.trim();
+                        const slipNo = document.getElementById('pkSlip').value.trim();
+                        const qty = document.getElementById('pkQty').value.trim();
+                        if (!slipNo && !qty) { alert('請輸入傳票編號或件數'); return; }
+                        if (qty && !/^\d+$/.test(qty)) { alert('件數請輸入數字'); return; }
+                        d.entries.push({ code, slipNo, qty });
+                        d.awaiting = true;
+                        renderPickupModal();
+                    };
+                }
+            } else {
+                body.innerHTML = `
+                    <label class="pk-label">收取件數</label>
+                    <input class="pk-input" id="pkCount" inputmode="numeric">
+                    <div class="pk-row">
+                        <button class="small-btn" id="pkCancel">取消</button>
+                        <button class="import-button" id="pkDone">完成</button>
+                    </div>`;
+                document.getElementById('pkCancel').onclick = closePickupModal;
+                document.getElementById('pkDone').onclick = () => {
+                    const n = document.getElementById('pkCount').value.trim();
+                    if (!/^\d+$/.test(n)) { alert('請輸入收取件數（數字）'); return; }
+                    finishPickup({ pickupCount: n });
+                };
+            }
+        }
+
+        function finishPickup(result) {
+            const t = pickupDraft.task;
+            const date = todayStr();
+            const base = () => ({ id: newRowId(), date, taskId: t.id, address: t.address || '', method: methodOf(t), synced: false });
+            let rows;
+            if (result.entries) {
+                rows = result.entries.map(e => ({ ...base(), code: e.code, pickupCount: '', slipNo: e.slipNo, qty: e.qty }));
+                t.pickup = { method: '方式二', entries: result.entries };
+            } else {
+                rows = [{ ...base(), code: t.code || '', pickupCount: result.pickupCount, slipNo: '', qty: '' }];
+                t.pickup = { method: '方式一', pickupCount: result.pickupCount };
+            }
+            // Replace this task's earlier unsynced rows (e.g. after re-completing); keep synced history
+            pickupLog = pickupLog.filter(r => r.taskId !== t.id || r.synced).concat(rows);
+            t.done = true;
+            savePickupLog();
+            closePickupModal();
+            saveDailyTasks();
+            renderDailyTasks();
+            syncPickupLog();
+        }
+
+        function uncompleteTask(task) {
+            task.done = false;
+            delete task.pickup;
+            pickupLog = pickupLog.filter(r => r.taskId !== task.id || r.synced);
+            savePickupLog();
+        }
+
+        // Sends unsynced rows to Notion one at a time (Notion allows about 3 requests per second)
+        async function syncPickupLog() {
+            if (pickupSyncing || !CONFIG.recordsDatabaseId || !navigator.onLine) return;
+            pickupSyncing = true;
+            try {
+                for (const r of pickupLog.filter(x => !x.synced)) {
+                    const res = await fetch(`${CONFIG.cloudflareWorkerUrl}/records?database_id=${CONFIG.recordsDatabaseId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            date: r.date, code: r.code, address: r.address, method: r.method,
+                            pickupCount: r.pickupCount, slipNo: r.slipNo, qty: r.qty
+                        })
+                    });
+                    if (!res.ok) break;
+                    r.synced = true;
+                    savePickupLog();
+                    await new Promise(done => setTimeout(done, 400));
+                }
+            } catch (e) {
+                console.error('Sync pickup log failed:', e);
+            } finally {
+                pickupSyncing = false;
+            }
         }
 
         function clearDoneTasks() {
@@ -1555,6 +1741,9 @@
         window.addEventListener('load', async () => {
             loadDailyTasks();
             setupTaskListeners();
+            loadPickupLog();
+            syncPickupLog();
+            window.addEventListener('online', syncPickupLog);
             await loadLocations();
             document.getElementById('searchInput').addEventListener('input', renderLocations);
         });
