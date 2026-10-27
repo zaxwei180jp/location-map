@@ -1386,21 +1386,46 @@
             renderDailyTasks();
         }
 
-        function openMapForPendingTasks() {
+        function getCurrentPositionOnce() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) return reject(new Error('no geolocation'));
+                navigator.geolocation.getCurrentPosition(
+                    pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+                    err => reject(err),
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+                );
+            });
+        }
+
+        async function openMapForPendingTasks() {
             const pending = sortedTasks().filter(t => !t.done);
             if (pending.length === 0) {
                 alert('沒有未完成的任務點位');
                 return;
             }
-            openMapWindow(pending.map(t => ({ id: t.id, code: t.code, name: t.name, lat: t.lat, lng: t.lng })));
+            const locs = pending.map(t => ({ id: t.id, code: t.code, name: t.name, lat: t.lat, lng: t.lng }));
+            // Open the window synchronously (inside the tap) so mobile browsers don't block it as a popup
+            const win = window.open('', 'LocationMap', 'width=1200,height=800');
+            if (win) win.document.write('<p style="font-family: sans-serif; padding: 16px;">定位中…</p>');
+            let pos = null;
+            try {
+                pos = await getCurrentPositionOnce();
+                userPos = pos;
+            } catch (e) {
+                alert('無法取得目前位置，地圖將不顯示所在位置');
+            }
+            openMapWindow(locs, win, pos);
         }
 
-        function openMapWindow(list) {
+        function openMapWindow(list, preOpenedWin, currentPos) {
             const locs = Array.isArray(list) ? list : selectedLocations;
             if (locs.length === 0) {
                 alert('Please select at least one location');
                 return;
             }
+
+            if (currentPos) localStorage.setItem('mapUserPos', JSON.stringify(currentPos));
+            else localStorage.removeItem('mapUserPos');
 
             localStorage.setItem('selectedLocationsForMap', JSON.stringify(locs));
 
@@ -1459,6 +1484,7 @@
             map = new google.maps.Map(document.getElementById('map'), { zoom: 12, center: { lat: 34.6937, lng: 135.5023 }, styles: [{ featureType: 'poi', stylers: [{ visibility: 'off' }] }, { featureType: 'poi.business', stylers: [{ visibility: 'off' }] }, { featureType: 'transit', stylers: [{ visibility: 'off' }] }, { featureType: 'poi.attraction', stylers: [{ visibility: 'off' }] }, { featureType: 'poi.government', stylers: [{ visibility: 'off' }] }, { featureType: 'poi.medical', stylers: [{ visibility: 'off' }] }, { featureType: 'poi.park', stylers: [{ visibility: 'off' }] }, { featureType: 'poi.place_of_worship', stylers: [{ visibility: 'off' }] }, { featureType: 'poi.school', stylers: [{ visibility: 'off' }] }, { featureType: 'poi.sports_complex', stylers: [{ visibility: 'off' }] }] });
             addFixedLandmark();
             displaySelectedLocations();
+            addUserMarker();
             displayLocationsList();
             setTimeout(() => centerToSelectedLocations(), 500);
         }
@@ -1472,6 +1498,14 @@
                     allMarkers.push(m);
                 }
             });
+        }
+
+        function addUserMarker() {
+            const raw = localStorage.getItem('mapUserPos');
+            if (!raw) return;
+            const p = JSON.parse(raw);
+            const m = new google.maps.Marker({ position: { lat: p.lat, lng: p.lng }, map: map, title: '目前位置', icon: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png', zIndex: 999 });
+            allMarkers.push(m);
         }
 
         function displaySelectedLocations() {
@@ -1507,7 +1541,12 @@
 </body>
 </html>`;
 
-            const w = window.open('', 'LocationMap', 'width=1200,height=800');
+            const w = preOpenedWin || window.open('', 'LocationMap', 'width=1200,height=800');
+            if (!w) {
+                alert('請允許此網站開啟新視窗');
+                return;
+            }
+            w.document.open();
             w.document.write(mapHTML);
             w.document.close();
         }
