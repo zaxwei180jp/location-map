@@ -1716,6 +1716,7 @@
                     pickupCount: r.pickupCount, slipNo: r.slipNo, qty: r.qty
                 }));
             }
+            rows = rows.map(r => ({ ...r, name: placeName(r) }));
             renderRecords(rows, date, source);
         }
 
@@ -1734,6 +1735,13 @@
         }
 
         let recordGroups = [];
+
+        // 地點 = name from the fixed locations database, matched by address
+        function placeName(r) {
+            const addr = (r.address || '').trim();
+            const loc = allLocations.find(l => (l.address || '').trim() === addr);
+            return loc ? loc.name : (r.name || r.address || '');
+        }
 
         function renderRecords(rows, date, source) {
             const esc = v => escAttr(String(v ?? ''));
