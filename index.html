@@ -619,12 +619,19 @@
         .pk-entry { padding: 8px 10px; background: #f3f6fb; border-radius: 8px; margin-bottom: 6px; font-size: 15px; }
         .rec-grid { display: grid; grid-template-columns: 44px 1fr 72px 80px; gap: 6px; align-items: center; }
         .rec-head { font-weight: 600; color: #666; font-size: 13px; padding: 0 10px; margin-top: 12px; }
-        .rec-row { background: #f3f6fb; border-radius: 10px; padding: 10px; margin-top: 6px; font-size: 15px; }
-        .rec-no { font-weight: 700; text-align: center; background: #fff; border-radius: 8px; padding: 6px 0; }
+        .rec-row { background: #f4efe8; border-radius: 10px; padding: 10px; margin-top: 6px; font-size: 15px; }
+        .rec-no { font-weight: 700; text-align: center; background: #fbf8f3; border-radius: 8px; padding: 6px 0; }
         .rec-code { word-break: break-all; }
         .rec-qty { text-align: right; font-weight: 600; }
-        .rec-detail summary { cursor: pointer; color: #1a73e8; }
-        .rec-detail details > div { padding: 4px 0; font-size: 14px; }
+        .rec-btn { background: none; border: none; color: #7d8b78; font-size: 15px; font-weight: 600; padding: 0; cursor: pointer; }
+        .slip-sheet { background: #f4efe8; border: 1px solid #d6cbbd; border-radius: 12px; padding: 14px; }
+        .slip-address { font-size: 13px; color: #8a817a; margin-bottom: 10px; }
+        .slip-table { border: 1px solid #cbbfb1; border-radius: 8px; overflow: hidden; background: #fbf8f3; }
+        .slip-row { display: grid; grid-template-columns: 1fr 110px; border-bottom: 1px solid #d9cfc2; font-size: 16px; }
+        .slip-row > div { padding: 11px 12px; }
+        .slip-row > div + div { text-align: right; border-left: 1px solid #d9cfc2; }
+        .slip-th { background: #d8cfc4; color: #5e5650; font-weight: 600; font-size: 14px; }
+        .slip-total { background: #e4dcd0; font-weight: 700; border-bottom: none; color: #7d8b78; }
     </style>
 </head>
 <body>
@@ -708,6 +715,17 @@
                 </div>
                 <div id="recordsBody" style="margin-top: 12px;"></div>
             </div>
+        </div>
+    </div>
+
+    <!-- Visit Detail Popup -->
+    <div class="modal" id="detailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="detailTitle"></h2>
+                <button class="close-btn" onclick="closeDetailModal()">×</button>
+            </div>
+            <div class="modal-body" id="detailBody"></div>
         </div>
     </div>
 
@@ -1579,7 +1597,7 @@
                 rows = result.entries.map(e => ({ ...base(), code: e.code, pickupCount: '', slipNo: e.slipNo, qty: e.qty }));
                 t.pickup = { method: '方式二', entries: result.entries };
             } else {
-                rows = [{ ...base(), code: t.code || '', pickupCount: result.pickupCount, slipNo: '', qty: '' }];
+                rows = [{ ...base(), code: t.name || t.code || '', pickupCount: result.pickupCount, slipNo: '', qty: '' }];
                 t.pickup = { method: '方式一', pickupCount: result.pickupCount };
             }
             // Replace this task's earlier unsynced rows (e.g. after re-completing); keep synced history
@@ -1700,6 +1718,8 @@
             return groups;
         }
 
+        let recordGroups = [];
+
         function renderRecords(rows, date, source) {
             const esc = v => escAttr(String(v ?? ''));
             const pending = pickupLog.filter(r => r.date === date && !r.synced).length;
@@ -1708,6 +1728,7 @@
             const pickupTotal = m1.reduce((a, r) => a + (Number(r.pickupCount) || 0), 0);
             const qtyTotal = m2.reduce((a, r) => a + (Number(r.qty) || 0), 0);
             const groups = groupVisits(rows);
+            recordGroups = groups;
             const table = groups.length ? `
                 <div class="rec-grid rec-head"><div>順序</div><div>客戶編號</div><div>件數</div><div>詳情</div></div>
                 ${groups.map((g, i) => {
@@ -1716,7 +1737,7 @@
                         ? g.rows.reduce((a, r) => a + (Number(r.qty) || 0), 0)
                         : (Number(g.rows[0].pickupCount) || 0);
                     const detail = isTwo
-                        ? `<details><summary>詳情</summary>${g.rows.map(r => `<div>傳票 ${esc(r.slipNo)}　${esc(r.qty)} 件</div>`).join('')}</details>`
+                        ? `<button class="rec-btn" data-group="${i}">詳情 ›</button>`
                         : '';
                     return `
                     <div class="rec-grid rec-row">
@@ -1730,6 +1751,28 @@
                 <div class="task-addr">資料來源：${source}${pending ? `｜本機尚有 ${pending} 筆未同步` : ''}</div>
                 <div class="pk-entry">共 ${rows.length} 筆｜方式一收取 ${pickupTotal} 件｜方式二 ${m2.length} 筆、${qtyTotal} 件</div>
                 ${table || '<div class="empty-state">這一天沒有收件紀錄</div>'}`;
+        }
+
+        function openDetailModal(i) {
+            const g = recordGroups[i];
+            if (!g) return;
+            const esc = v => escAttr(String(v ?? ''));
+            const total = g.rows.reduce((a, r) => a + (Number(r.qty) || 0), 0);
+            document.getElementById('detailTitle').textContent = `📑 ${g.code || '—'}`;
+            document.getElementById('detailBody').innerHTML = `
+                <div class="slip-sheet">
+                    <div class="slip-address">${esc(g.address)}</div>
+                    <div class="slip-table">
+                        <div class="slip-row slip-th"><div>傳票編號</div><div>件數</div></div>
+                        ${g.rows.map(r => `<div class="slip-row"><div>${esc(r.slipNo)}</div><div>${esc(r.qty)} 件</div></div>`).join('')}
+                        <div class="slip-row slip-total"><div>合計</div><div>${total} 件</div></div>
+                    </div>
+                </div>`;
+            document.getElementById('detailModal').classList.add('show');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.remove('show');
         }
 
         function clearDoneTasks() {
@@ -1919,6 +1962,10 @@
             loadDailyTasks();
             setupTaskListeners();
             loadPickupLog();
+            document.getElementById('recordsBody').addEventListener('click', e => {
+                const btn = e.target.closest('[data-group]');
+                if (btn) openDetailModal(Number(btn.dataset.group));
+            });
             await loadLocations();
             document.getElementById('searchInput').addEventListener('input', renderLocations);
         });
