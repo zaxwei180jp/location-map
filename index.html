@@ -638,6 +638,7 @@
         .slip-table td { padding: 11px 10px; border-top: 1px solid #d9cfc2; }
         .slip-table .num { text-align: right; white-space: nowrap; }
         .slip-table tfoot td { background: #e4dcd0; font-weight: 700; color: #7d8b78; }
+        .task-note { font-size: 13px; color: #7a7a7a; margin-top: 6px; text-align: right; white-space: pre-wrap; word-break: break-all; max-width: 100%; }
         .rec-btn { background: none; border: none; color: #7d8b78; font-size: 15px; font-weight: 600; padding: 0; cursor: pointer; }
         .slip-sheet { background: #f4efe8; border: 1px solid #d6cbbd; border-radius: 12px; padding: 14px; }
         .slip-address { font-size: 13px; color: #8a817a; margin-bottom: 10px; }
@@ -932,7 +933,7 @@
                     ${loc.address}<br/>
                     ${loc.notes ? `<div style="margin-top: 4px; font-size: 12px; color: #666;">${loc.notes}</div>` : ''}
                     <div style="margin-top: 8px;">
-                        <button class="small-btn" onclick="editLocationModal('${loc.id}', '${loc.code}', '${loc.name.replace(/'/g, "\\'")}', '${loc.address.replace(/'/g, "\\'")}', '${loc.type || ''}', '${loc.notes?.replace(/'/g, "\\'") || ''}')">Edit</button>
+                        <button class="small-btn" onclick="editLocationModal('${loc.id}', '${loc.code}', '${loc.name.replace(/'/g, "\\'")}', '${loc.address.replace(/'/g, "\\'")}', '${loc.type || ''}', '${loc.notes?.replace(/'/g, "\\'") || ''}', '${loc.method || ''}')">Edit</button>
                         <button class="small-btn delete" style="margin-left: 4px;" onclick="deleteLocation('${loc.id}')">Delete</button>
                     </div>
                 </div>
@@ -958,14 +959,14 @@
                     ${loc.address}<br/>
                     ${loc.notes ? `<div style="margin-top: 4px; font-size: 12px; color: #666;">${loc.notes}</div>` : ''}
                     <div style="margin-top: 8px;">
-                        <button class="small-btn" onclick="editLocationModal('${loc.id}', '${loc.code}', '${loc.name.replace(/'/g, "\\'")}', '${loc.address.replace(/'/g, "\\'")}', '${loc.type || ''}', '${loc.notes?.replace(/'/g, "\\'") || ''}')">Edit</button>
+                        <button class="small-btn" onclick="editLocationModal('${loc.id}', '${loc.code}', '${loc.name.replace(/'/g, "\\'")}', '${loc.address.replace(/'/g, "\\'")}', '${loc.type || ''}', '${loc.notes?.replace(/'/g, "\\'") || ''}', '${loc.method || ''}')">Edit</button>
                         <button class="small-btn delete" style="margin-left: 4px;" onclick="deleteLocation('${loc.id}')">Delete</button>
                     </div>
                 </div>
             `).join('');
         }
 
-        function editLocationModal(id, code, name, address, type, notes) {
+        function editLocationModal(id, code, name, address, type, notes, method) {
             const modalDiv = document.createElement('div');
             modalDiv.className = 'modal show';
             modalDiv.innerHTML = `
@@ -995,6 +996,14 @@
                             </select>
                         </div>
                         <div class="form-group">
+                            <label class="form-label">收件方式</label>
+                            <select class="form-input" id="edit_method">
+                                <option value="">-- 未設定 --</option>
+                                <option value="方式一" ${method === '方式一' ? 'selected' : ''}>方式一</option>
+                                <option value="方式二" ${method === '方式二' ? 'selected' : ''}>方式二</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
                             <label class="form-label">Notes</label>
                             <input class="form-input" type="text" id="edit_notes" value="${notes}">
                         </div>
@@ -1013,6 +1022,7 @@
             const address = document.getElementById('edit_address').value.trim();
             const type = document.getElementById('edit_type').value.trim();
             const notes = document.getElementById('edit_notes').value.trim();
+            const method = document.getElementById('edit_method').value.trim();
 
             if (!name || !address) {
                 alert('Name and address are required');
@@ -1023,7 +1033,7 @@
                 const response = await fetch(`${CONFIG.cloudflareWorkerUrl}/locations/${id}?database_id=${CONFIG.notionDatabaseId}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, address, type, notes })
+                    body: JSON.stringify({ name, address, type, notes, method })
                 });
 
                 const responseText = await response.text();
@@ -1118,6 +1128,11 @@
                     <option value="">-- Type --</option>
                     ${getTypeOptions().map(t => `<option value="${t}">${t}</option>`).join('')}
                 </select>
+                <select class="form-input" id="bulk_method_${rowNum}" style="margin-bottom: 8px;">
+                    <option value="">-- 收件方式 --</option>
+                    <option value="方式一">方式一</option>
+                    <option value="方式二">方式二</option>
+                </select>
                 <input class="form-input" type="text" placeholder="Notes" id="bulk_notes_${rowNum}">
             `;
             container.appendChild(row);
@@ -1135,6 +1150,7 @@
                 const address = document.getElementById(`bulk_address_${i}`)?.value.trim();
                 const type = document.getElementById(`bulk_type_${i}`)?.value.trim();
                 const notes = document.getElementById(`bulk_notes_${i}`)?.value.trim();
+                const method = document.getElementById(`bulk_method_${i}`)?.value.trim();
 
                 if (!code || !name || !address) continue;
 
@@ -1142,7 +1158,7 @@
                     const response = await fetch(`${CONFIG.cloudflareWorkerUrl}/locations?database_id=${CONFIG.notionDatabaseId}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ code, name, address, type, notes, database_id: CONFIG.notionDatabaseId })
+                        body: JSON.stringify({ code, name, address, type, notes, method, database_id: CONFIG.notionDatabaseId })
                     });
 
                     if (response.ok) {
@@ -1221,6 +1237,7 @@
                     needsCart: false,
                     needsBox: false,
                     method: full.method || '方式一',
+                    notes: full.notes || '',
                     done: false
                 });
                 added++;
@@ -1248,6 +1265,8 @@
                     ? `<div class="task-dist">📍 直線 ${formatDistance(distanceKm(userPos.lat, userPos.lng, t.lat, t.lng))}</div>`
                     : '';
                 const boxHtml = t.needsBox ? renderBoxRows(t) : '';
+                const noteText = t.notes || (allLocations.find(l => l.id === t.id)?.notes) || '';
+                const noteHtml = noteText ? `<div class="task-note">${escAttr(noteText)}</div>` : '';
                 return `
                     <div class="task-item ${t.done ? 'done' : ''}">
                         <input type="checkbox" class="task-done" data-id="${t.id}" ${t.done ? 'checked' : ''}>
@@ -1268,6 +1287,7 @@
                                 <button class="task-btn" data-action="map" data-id="${t.id}" title="導航">🗺️</button>
                                 <button class="task-btn" data-action="del" data-id="${t.id}" title="移除">🗑️</button>
                             </div>
+                            ${noteHtml}
                         </div>
                         ${boxHtml}
                     </div>
