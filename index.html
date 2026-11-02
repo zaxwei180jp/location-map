@@ -302,6 +302,7 @@
             align-items: center;
             gap: 4px;
             cursor: pointer;
+            white-space: nowrap;
         }
 
         .task-needs input {
@@ -374,7 +375,9 @@
             flex-direction: column;
             align-items: flex-end;
             gap: 6px;
-            flex-shrink: 0;
+            flex: 0 0 136px;
+            width: 136px;
+            min-width: 0;
         }
 
         .task-time {
@@ -638,7 +641,7 @@
         .slip-table td { padding: 11px 10px; border-top: 1px solid #d9cfc2; }
         .slip-table .num { text-align: right; white-space: nowrap; }
         .slip-table tfoot td { background: #e4dcd0; font-weight: 700; color: #7d8b78; }
-        .task-note { font-size: 13px; color: #7a7a7a; margin-top: 6px; text-align: right; white-space: pre-wrap; word-break: break-all; max-width: 100%; }
+        .task-note { font-size: 13px; color: #7a7a7a; margin-top: 2px; text-align: right; white-space: pre-wrap; overflow-wrap: anywhere; width: 100%; line-height: 1.4; }
         .rec-btn { background: none; border: none; color: #7d8b78; font-size: 15px; font-weight: 600; padding: 0; cursor: pointer; }
         .slip-sheet { background: #f4efe8; border: 1px solid #d6cbbd; border-radius: 12px; padding: 14px; }
         .slip-address { font-size: 13px; color: #8a817a; margin-bottom: 10px; }
