@@ -635,6 +635,7 @@
         .rec-table td.c-no { background: #fbf8f3; font-weight: 700; }
         .rec-table .c-qty { text-align: right; }
         .rec-table td.c-qty { font-weight: 600; white-space: nowrap; }
+        .c-amt { font-size: 12px; color: #8a817a; font-weight: 500; }
         .rec-table td.c-name { word-break: break-all; }
         .slip-table { width: 100%; border-collapse: collapse; font-size: 16px; }
         .slip-table th { background: #d8cfc4; color: #5e5650; font-weight: 600; font-size: 14px; padding: 9px 10px; text-align: left; }
@@ -1528,6 +1529,14 @@
             return t.method === '方式二' ? '方式二' : '方式一';
         }
 
+        // 付款金額: optional number (decimals allowed); returns null if invalid
+        function readAmountInput(id) {
+            const v = document.getElementById(id).value.trim();
+            if (!v) return '';
+            if (!/^\d+(\.\d+)?$/.test(v)) { alert('付款金額請輸入數字'); return null; }
+            return v;
+        }
+
         function openPickupModal(id) {
             const task = dailyTasks.find(t => t.id === id);
             if (!task) return;
@@ -1552,19 +1561,19 @@
                 const editing = d.editIndex !== null && d.editIndex !== undefined;
                 const list = d.entries.map((e, i) =>
                     `<div class="pk-entry pk-entry-row">
-                        <span>#${i + 1}　客戶 ${escAttr(e.code)}　傳票 ${escAttr(e.slipNo)}　${escAttr(e.qty)} 件</span>
+                        <span>#${i + 1}　客戶 ${escAttr(e.code)}　傳票 ${escAttr(e.slipNo)}　${escAttr(e.qty)} 件${e.amount ? `　¥${escAttr(e.amount)}` : ''}</span>
                         <span class="pk-entry-btns">
                             <button class="task-btn" data-pk="edit" data-i="${i}">編輯</button>
                             <button class="task-btn" data-pk="del" data-i="${i}">刪除</button>
                         </span>
                     </div>`
                 ).join('');
-                const cur = editing ? d.entries[d.editIndex] : { code: t.code || '', slipNo: '', qty: '' };
+                const cur = editing ? d.entries[d.editIndex] : { code: '', slipNo: '', qty: '', amount: '' };
                 const buttons = editing
                     ? `<button class="small-btn" id="pkCancelEdit">取消修改</button><button class="import-button" id="pkUpdate">更新這筆</button>`
-                    : d.awaiting
-                        ? `<button class="small-btn" id="pkContinue">繼續輸入</button><button class="import-button" id="pkEnd">結束</button>`
-                        : `<button class="small-btn" id="pkCancel">取消</button><button class="import-button" id="pkSave">儲存這筆</button>`;
+                    : `<button class="small-btn" id="pkCancel">取消</button>
+                       ${d.entries.length ? `<button class="small-btn" id="pkEnd">結束</button>` : ''}
+                       <button class="import-button" id="pkSave">儲存這筆</button>`;
                 body.innerHTML = `
                     ${list ? `<div>${list}</div>` : ''}
                     <label class="pk-label">客戶編號</label>
@@ -1573,6 +1582,8 @@
                     <input class="pk-input" id="pkSlip" inputmode="numeric" value="${escAttr(cur.slipNo)}">
                     <label class="pk-label">件數</label>
                     <input class="pk-input" id="pkQty" inputmode="numeric" value="${escAttr(cur.qty)}">
+                    <label class="pk-label">付款金額（選填）</label>
+                    <input class="pk-input" id="pkAmount" inputmode="decimal" value="${escAttr(cur.amount || '')}">
                     <div class="pk-row">${buttons}</div>`;
 
                 body.querySelectorAll('[data-pk]').forEach(btn => {
@@ -1583,7 +1594,6 @@
                         } else {
                             d.entries.splice(i, 1);
                             d.editIndex = null;
-                            if (!d.entries.length) d.awaiting = false;
                         }
                         renderPickupModal();
                     };
@@ -1595,7 +1605,9 @@
                     const qty = document.getElementById('pkQty').value.trim();
                     if (!slipNo && !qty) { alert('請輸入傳票編號或件數'); return null; }
                     if (qty && !/^\d+$/.test(qty)) { alert('件數請輸入數字'); return null; }
-                    return { code, slipNo, qty };
+                    const amount = readAmountInput('pkAmount');
+                    if (amount === null) return null;
+                    return { code, slipNo, qty, amount };
                 };
 
                 if (editing) {
@@ -1605,26 +1617,26 @@
                         if (!entry) return;
                         d.entries[d.editIndex] = entry;
                         d.editIndex = null;
-                        d.awaiting = true;
                         renderPickupModal();
                     };
-                } else if (d.awaiting) {
-                    document.getElementById('pkContinue').onclick = () => { d.awaiting = false; renderPickupModal(); };
-                    document.getElementById('pkEnd').onclick = () => finishPickup({ entries: d.entries });
                 } else {
                     document.getElementById('pkCancel').onclick = closePickupModal;
+                    if (d.entries.length) {
+                        document.getElementById('pkEnd').onclick = () => finishPickup({ entries: d.entries });
+                    }
                     document.getElementById('pkSave').onclick = () => {
                         const entry = readForm();
                         if (!entry) return;
                         d.entries.push(entry);
-                        d.awaiting = true;
-                        renderPickupModal();
+                        renderPickupModal(); // form clears; enter the next slip or press 結束
                     };
                 }
             } else {
                 body.innerHTML = `
                     <label class="pk-label">收取件數</label>
                     <input class="pk-input" id="pkCount" inputmode="numeric">
+                    <label class="pk-label">付款金額（選填）</label>
+                    <input class="pk-input" id="pkAmount" inputmode="decimal">
                     <div class="pk-row">
                         <button class="small-btn" id="pkCancel">取消</button>
                         <button class="import-button" id="pkDone">完成</button>
@@ -1633,7 +1645,9 @@
                 document.getElementById('pkDone').onclick = () => {
                     const n = document.getElementById('pkCount').value.trim();
                     if (!/^\d+$/.test(n)) { alert('請輸入收取件數（數字）'); return; }
-                    finishPickup({ pickupCount: n });
+                    const amount = readAmountInput('pkAmount');
+                    if (amount === null) return;
+                    finishPickup({ pickupCount: n, amount });
                 };
             }
         }
@@ -1644,10 +1658,10 @@
             const base = () => ({ id: newRowId(), date, taskId: t.id, name: t.name || t.code || '', address: t.address || '', method: methodOf(t), synced: false });
             let rows;
             if (result.entries) {
-                rows = result.entries.map(e => ({ ...base(), code: e.code, pickupCount: '', slipNo: e.slipNo, qty: e.qty }));
+                rows = result.entries.map(e => ({ ...base(), code: e.code, pickupCount: '', slipNo: e.slipNo, qty: e.qty, amount: e.amount || '' }));
                 t.pickup = { method: '方式二', entries: result.entries };
             } else {
-                rows = [{ ...base(), code: '', pickupCount: result.pickupCount, slipNo: '', qty: '' }];
+                rows = [{ ...base(), code: '', pickupCount: result.pickupCount, slipNo: '', qty: '', amount: result.amount || '' }];
                 t.pickup = { method: '方式一', pickupCount: result.pickupCount };
             }
             // Replace this task's earlier unsynced rows (e.g. after re-completing); keep synced history
@@ -1702,7 +1716,7 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             date: r.date, name: r.name, code: r.code, address: r.address, method: r.method,
-                            pickupCount: r.pickupCount, slipNo: r.slipNo, qty: r.qty
+                            pickupCount: r.pickupCount, slipNo: r.slipNo, qty: r.qty, amount: r.amount
                         })
                     });
                     if (!res.ok) break;
@@ -1748,7 +1762,7 @@
             if (!rows) {
                 rows = pickupLog.filter(r => r.date === date).map(r => ({
                     name: r.name || r.code, code: r.name ? (r.code || '') : '', address: r.address, method: r.method,
-                    pickupCount: r.pickupCount, slipNo: r.slipNo, qty: r.qty
+                    pickupCount: r.pickupCount, slipNo: r.slipNo, qty: r.qty, amount: r.amount
                 }));
             }
             rows = rows.map(r => ({ ...r, name: placeName(r) }));
@@ -1785,6 +1799,7 @@
             const m2 = rows.filter(r => r.method === '方式二');
             const pickupTotal = m1.reduce((a, r) => a + (Number(r.pickupCount) || 0), 0);
             const qtyTotal = m2.reduce((a, r) => a + (Number(r.qty) || 0), 0);
+            const amtAll = rows.reduce((a, r) => a + (Number(r.amount) || 0), 0);
             recordGroups = groupVisits(rows);
             const table = recordGroups.length ? `
                 <table class="rec-table">
@@ -1803,11 +1818,12 @@
                             const count = isTwo
                                 ? g.rows.reduce((a, r) => a + (Number(r.qty) || 0), 0)
                                 : (Number(g.rows[0].pickupCount) || 0);
+                            const amtG = g.rows.reduce((a, r) => a + (Number(r.amount) || 0), 0);
                             return `
                             <tr>
                                 <td class="c-no">${i + 1}</td>
                                 <td class="c-name">${esc(g.name)}</td>
-                                <td class="c-qty">${count} 件</td>
+                                <td class="c-qty">${count} 件${amtG ? `<div class="c-amt">¥${amtG.toLocaleString('ja-JP')}</div>` : ''}</td>
                                 <td>${isTwo ? `<button class="rec-btn" data-group="${i}">詳情 ›</button>` : ''}</td>
                             </tr>`;
                         }).join('')}
@@ -1815,7 +1831,7 @@
                 </table>` : '';
             document.getElementById('recordsBody').innerHTML = `
                 <div class="task-addr">資料來源：${source}${pending ? `｜本機尚有 ${pending} 筆未同步` : ''}</div>
-                <div class="pk-entry">共 ${rows.length} 筆｜方式一收取 ${pickupTotal} 件｜方式二 ${m2.length} 筆、${qtyTotal} 件</div>
+                <div class="pk-entry">共 ${rows.length} 筆｜方式一收取 ${pickupTotal} 件｜方式二 ${m2.length} 筆、${qtyTotal} 件${amtAll ? `｜付款合計 ¥${amtAll.toLocaleString('ja-JP')}` : ''}</div>
                 ${table || '<div class="empty-state">這一天沒有收件紀錄</div>'}`;
         }
 
@@ -1824,20 +1840,22 @@
             if (!g) return;
             const esc = v => escAttr(String(v ?? ''));
             const total = g.rows.reduce((a, r) => a + (Number(r.qty) || 0), 0);
+            const amountTotal = g.rows.reduce((a, r) => a + (Number(r.amount) || 0), 0);
             document.getElementById('detailTitle').textContent = `📑 ${g.name || '—'}`;
             document.getElementById('detailBody').innerHTML = `
                 <div class="slip-sheet">
                     <table class="slip-table">
                         <colgroup>
-                            <col style="width: 34%;">
+                            <col style="width: 30%;">
                             <col>
-                            <col style="width: 72px;">
+                            <col style="width: 64px;">
+                            <col style="width: 84px;">
                         </colgroup>
-                        <thead><tr><th>客戶編號</th><th>傳票編號</th><th class="num">件數</th></tr></thead>
+                        <thead><tr><th>客戶編號</th><th>傳票編號</th><th class="num">件數</th><th class="num">付款金額</th></tr></thead>
                         <tbody>
-                            ${g.rows.map(r => `<tr><td>${esc(r.code)}</td><td>${esc(r.slipNo)}</td><td class="num">${esc(r.qty)} 件</td></tr>`).join('')}
+                            ${g.rows.map(r => `<tr><td>${esc(r.code)}</td><td>${esc(r.slipNo)}</td><td class="num">${esc(r.qty)} 件</td><td class="num">${r.amount ? esc(r.amount) : '—'}</td></tr>`).join('')}
                         </tbody>
-                        <tfoot><tr><td colspan="2">合計</td><td class="num">${total} 件</td></tr></tfoot>
+                        <tfoot><tr><td colspan="2">合計</td><td class="num">${total} 件</td><td class="num">${amountTotal || '—'}</td></tr></tfoot>
                     </table>
                 </div>`;
             document.getElementById('detailModal').classList.add('show');
@@ -1885,6 +1903,7 @@
             const twoGroups = recordGroups.filter(g => g.method === '方式二');
             const totalPickup = pickupGroups.reduce((a, g) => a + (Number(g.rows[0].pickupCount) || 0), 0);
             const totalQty = twoGroups.reduce((a, g) => a + g.rows.reduce((b, r) => b + (Number(r.qty) || 0), 0), 0);
+            const totalAmt = recordGroups.reduce((a, g) => a + g.rows.reduce((b, r) => b + (Number(r.amount) || 0), 0), 0);
 
             const bodyH = recordGroups.reduce((a, g) =>
                 a + ROW + (g.method === '方式二' ? SLIP_HEAD + g.rows.length * SLIP + 14 : 0) + 10, 0);
@@ -1915,7 +1934,7 @@
             ctx.fillText(date, P, P + 56);
             ctx.font = `500 17px ${FONT}`;
             ctx.fillStyle = C.text;
-            ctx.fillText(`共 ${recordGroups.length} 個地點｜方式一收取 ${totalPickup} 件｜方式二 ${twoGroups.length} 個地點、${totalQty} 件`, P, P + 96);
+            ctx.fillText(`共 ${recordGroups.length} 個地點｜方式一收取 ${totalPickup} 件｜方式二 ${twoGroups.length} 個地點、${totalQty} 件${totalAmt ? `｜付款合計 ¥${totalAmt.toLocaleString('ja-JP')}` : ''}`, P, P + 96);
 
             // table header
             let y = P + 120;
@@ -1954,7 +1973,14 @@
 
                 ctx.textAlign = 'right';
                 ctx.fillStyle = C.accent;
-                ctx.fillText(`${count} 件`, W - P - 16, y + (ROW - 8) / 2);
+                const amtG = g.rows.reduce((a, r) => a + (Number(r.amount) || 0), 0);
+                ctx.fillText(`${count} 件`, W - P - 16, amtG ? y + (ROW - 8) / 2 - 10 : y + (ROW - 8) / 2);
+                if (amtG) {
+                    ctx.fillStyle = C.sub;
+                    ctx.font = `500 14px ${FONT}`;
+                    ctx.fillText(`¥${amtG.toLocaleString('ja-JP')}`, W - P - 16, y + (ROW - 8) / 2 + 12);
+                    ctx.fillStyle = C.accent;
+                }
 
                 y += ROW;
 
