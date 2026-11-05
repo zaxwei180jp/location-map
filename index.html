@@ -620,6 +620,7 @@
         .pk-row > button { flex: 1; padding: 12px; }
         .pk-entry-row { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
         .pk-entry-btns { display: flex; gap: 4px; flex-shrink: 0; }
+        .rec-summary { display: flex; flex-direction: column; gap: 4px; }
         .pk-entry { padding: 8px 10px; background: #f3efe9; border-radius: 8px; margin-bottom: 6px; font-size: 15px; }
         .rec-grid { display: grid; grid-template-columns: 44px 1fr 72px 80px; gap: 6px; align-items: center; }
         .rec-head { font-weight: 600; color: #7a726b; font-size: 13px; padding: 0 10px; margin-top: 12px; }
@@ -1996,7 +1997,11 @@
                 </table>` : '';
             document.getElementById('recordsBody').innerHTML = `
                 <div class="task-addr">資料來源：${source}${pending ? `｜本機尚有 ${pending} 筆未同步` : ''}</div>
-                <div class="pk-entry">共 ${rows.length} 筆｜付款合計 ¥${amtAll.toLocaleString('ja-JP')}｜收款合計 ¥${recAll.toLocaleString('ja-JP')}</div>
+                <div class="pk-entry rec-summary">
+                    <div>共 ${rows.length} 筆</div>
+                    <div>付款合計 ¥${amtAll.toLocaleString('ja-JP')}</div>
+                    <div>收款合計 ¥${recAll.toLocaleString('ja-JP')}</div>
+                </div>
                 ${table || '<div class="empty-state">這一天沒有收件紀錄</div>'}`;
         }
 
