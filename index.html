@@ -2106,7 +2106,7 @@
             ctx.fillText(date, P, P + 56);
             ctx.font = `500 17px ${FONT}`;
             ctx.fillStyle = C.text;
-            ctx.fillText(`共 ${recordGroups.length} 個地點｜方式一收取 ${totalPickup} 件｜方式二 ${twoGroups.length} 個地點、${totalQty} 件${totalAmt ? `｜付款合計 ¥${totalAmt.toLocaleString('ja-JP')}` : ''}${totalRec ? `｜收款合計 ¥${totalRec.toLocaleString('ja-JP')}` : ''}`, P, P + 96);
+            ctx.fillText(`共 ${recordGroups.reduce((a, g) => a + g.rows.length, 0)} 筆｜付款合計 ¥${totalAmt.toLocaleString('ja-JP')}｜收款合計 ¥${totalRec.toLocaleString('ja-JP')}`, P, P + 96);
 
             // table header: 順序 地點 件數 付款 收款
             let y = P + 120;
