@@ -1996,7 +1996,7 @@
                 </table>` : '';
             document.getElementById('recordsBody').innerHTML = `
                 <div class="task-addr">資料來源：${source}${pending ? `｜本機尚有 ${pending} 筆未同步` : ''}</div>
-                <div class="pk-entry">共 ${rows.length} 筆｜方式一收取 ${pickupTotal} 件｜方式二 ${m2.length} 筆、${qtyTotal} 件${amtAll ? `｜付款合計 ¥${amtAll.toLocaleString('ja-JP')}` : ''}${recAll ? `｜收款合計 ¥${recAll.toLocaleString('ja-JP')}` : ''}</div>
+                <div class="pk-entry">共 ${rows.length} 筆｜付款合計 ¥${amtAll.toLocaleString('ja-JP')}｜收款合計 ¥${recAll.toLocaleString('ja-JP')}</div>
                 ${table || '<div class="empty-state">這一天沒有收件紀錄</div>'}`;
         }
 
