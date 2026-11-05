@@ -1568,7 +1568,7 @@
                         </span>
                     </div>`
                 ).join('');
-                const cur = editing ? d.entries[d.editIndex] : { code: '', slipNo: '', qty: '', amount: '' };
+                const cur = editing ? d.entries[d.editIndex] : { code: '', slipNo: '', qty: '', amount: '', receive: '' };
                 const buttons = editing
                     ? `<button class="small-btn" id="pkCancelEdit">取消修改</button><button class="import-button" id="pkUpdate">更新這筆</button>`
                     : `<button class="small-btn" id="pkCancel">取消</button>
@@ -1584,6 +1584,8 @@
                     <input class="pk-input" id="pkQty" inputmode="numeric" value="${escAttr(cur.qty)}">
                     <label class="pk-label">付款金額（選填）</label>
                     <input class="pk-input" id="pkAmount" inputmode="decimal" value="${escAttr(cur.amount || '')}">
+                    <label class="pk-label">收款金額（選填）</label>
+                    <input class="pk-input" id="pkReceive" inputmode="decimal" value="${escAttr(cur.receive || '')}">
                     <div class="pk-row">${buttons}</div>`;
 
                 body.querySelectorAll('[data-pk]').forEach(btn => {
@@ -1607,7 +1609,9 @@
                     if (qty && !/^\d+$/.test(qty)) { alert('件數請輸入數字'); return null; }
                     const amount = readAmountInput('pkAmount');
                     if (amount === null) return null;
-                    return { code, slipNo, qty, amount };
+                    const receive = readAmountInput('pkReceive');
+                    if (receive === null) return null;
+                    return { code, slipNo, qty, amount, receive };
                 };
 
                 if (editing) {
@@ -1637,6 +1641,8 @@
                     <input class="pk-input" id="pkCount" inputmode="numeric">
                     <label class="pk-label">付款金額（選填）</label>
                     <input class="pk-input" id="pkAmount" inputmode="decimal">
+                    <label class="pk-label">收款金額（選填）</label>
+                    <input class="pk-input" id="pkReceive" inputmode="decimal">
                     <div class="pk-row">
                         <button class="small-btn" id="pkCancel">取消</button>
                         <button class="import-button" id="pkDone">完成</button>
@@ -1647,7 +1653,9 @@
                     if (!/^\d+$/.test(n)) { alert('請輸入收取件數（數字）'); return; }
                     const amount = readAmountInput('pkAmount');
                     if (amount === null) return;
-                    finishPickup({ pickupCount: n, amount });
+                    const receive = readAmountInput('pkReceive');
+                    if (receive === null) return;
+                    finishPickup({ pickupCount: n, amount, receive });
                 };
             }
         }
@@ -1658,10 +1666,10 @@
             const base = () => ({ id: newRowId(), date, taskId: t.id, name: t.name || t.code || '', address: t.address || '', method: methodOf(t), synced: false });
             let rows;
             if (result.entries) {
-                rows = result.entries.map(e => ({ ...base(), code: e.code, pickupCount: '', slipNo: e.slipNo, qty: e.qty, amount: e.amount || '' }));
+                rows = result.entries.map(e => ({ ...base(), code: e.code, pickupCount: '', slipNo: e.slipNo, qty: e.qty, amount: e.amount || '', receive: e.receive || '' }));
                 t.pickup = { method: '方式二', entries: result.entries };
             } else {
-                rows = [{ ...base(), code: '', pickupCount: result.pickupCount, slipNo: '', qty: '', amount: result.amount || '' }];
+                rows = [{ ...base(), code: '', pickupCount: result.pickupCount, slipNo: '', qty: '', amount: result.amount || '', receive: result.receive || '' }];
                 t.pickup = { method: '方式一', pickupCount: result.pickupCount };
             }
             // Replace this task's earlier unsynced rows (e.g. after re-completing); keep synced history
@@ -1716,7 +1724,7 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             date: r.date, name: r.name, code: r.code, address: r.address, method: r.method,
-                            pickupCount: r.pickupCount, slipNo: r.slipNo, qty: r.qty, amount: r.amount
+                            pickupCount: r.pickupCount, slipNo: r.slipNo, qty: r.qty, amount: r.amount, receive: r.receive
                         })
                     });
                     if (!res.ok) break;
@@ -1762,7 +1770,7 @@
             if (!rows) {
                 rows = pickupLog.filter(r => r.date === date).map(r => ({
                     name: r.name || r.code, code: r.name ? (r.code || '') : '', address: r.address, method: r.method,
-                    pickupCount: r.pickupCount, slipNo: r.slipNo, qty: r.qty, amount: r.amount
+                    pickupCount: r.pickupCount, slipNo: r.slipNo, qty: r.qty, amount: r.amount, receive: r.receive
                 }));
             }
             rows = rows.map(r => ({ ...r, name: placeName(r) }));
