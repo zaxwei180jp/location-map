@@ -636,6 +636,7 @@
         .rec-table .c-qty { text-align: right; }
         .rec-table td.c-qty { font-weight: 600; white-space: nowrap; }
         .c-amt { font-size: 12px; color: #8a817a; font-weight: 500; }
+        .amt-cell { font-size: 13px; line-height: 1.5; white-space: nowrap; }
         .rec-table td.c-name { word-break: break-all; }
         .slip-table { width: 100%; border-collapse: collapse; font-size: 16px; }
         .slip-table th { background: #d8cfc4; color: #5e5650; font-weight: 600; font-size: 14px; padding: 9px 10px; text-align: left; }
@@ -1793,6 +1794,19 @@
 
         let recordGroups = [];
 
+        // 付款／收款 totals for one visit (group)
+        function groupMoney(g) {
+            return {
+                pay: g.rows.reduce((a, r) => a + (Number(r.amount) || 0), 0),
+                rec: g.rows.reduce((a, r) => a + (Number(r.receive) || 0), 0)
+            };
+        }
+
+        function moneyLine(m) {
+            return [m.pay ? `付 ¥${m.pay.toLocaleString('ja-JP')}` : '', m.rec ? `收 ¥${m.rec.toLocaleString('ja-JP')}` : '']
+                .filter(Boolean).join('｜');
+        }
+
         // 地點 = name from the fixed locations database, matched by address
         function placeName(r) {
             const addr = (r.address || '').trim();
@@ -1808,6 +1822,7 @@
             const pickupTotal = m1.reduce((a, r) => a + (Number(r.pickupCount) || 0), 0);
             const qtyTotal = m2.reduce((a, r) => a + (Number(r.qty) || 0), 0);
             const amtAll = rows.reduce((a, r) => a + (Number(r.amount) || 0), 0);
+            const recAll = rows.reduce((a, r) => a + (Number(r.receive) || 0), 0);
             recordGroups = groupVisits(rows);
             const table = recordGroups.length ? `
                 <table class="rec-table">
@@ -1826,12 +1841,12 @@
                             const count = isTwo
                                 ? g.rows.reduce((a, r) => a + (Number(r.qty) || 0), 0)
                                 : (Number(g.rows[0].pickupCount) || 0);
-                            const amtG = g.rows.reduce((a, r) => a + (Number(r.amount) || 0), 0);
+                            const money = groupMoney(g);
                             return `
                             <tr>
                                 <td class="c-no">${i + 1}</td>
                                 <td class="c-name">${esc(g.name)}</td>
-                                <td class="c-qty">${count} 件${amtG ? `<div class="c-amt">¥${amtG.toLocaleString('ja-JP')}</div>` : ''}</td>
+                                <td class="c-qty">${count} 件${moneyLine(money) ? `<div class="c-amt">${moneyLine(money)}</div>` : ''}</td>
                                 <td>${isTwo ? `<button class="rec-btn" data-group="${i}">詳情 ›</button>` : ''}</td>
                             </tr>`;
                         }).join('')}
@@ -1839,7 +1854,7 @@
                 </table>` : '';
             document.getElementById('recordsBody').innerHTML = `
                 <div class="task-addr">資料來源：${source}${pending ? `｜本機尚有 ${pending} 筆未同步` : ''}</div>
-                <div class="pk-entry">共 ${rows.length} 筆｜方式一收取 ${pickupTotal} 件｜方式二 ${m2.length} 筆、${qtyTotal} 件${amtAll ? `｜付款合計 ¥${amtAll.toLocaleString('ja-JP')}` : ''}</div>
+                <div class="pk-entry">共 ${rows.length} 筆｜方式一收取 ${pickupTotal} 件｜方式二 ${m2.length} 筆、${qtyTotal} 件${amtAll ? `｜付款合計 ¥${amtAll.toLocaleString('ja-JP')}` : ''}${recAll ? `｜收款合計 ¥${recAll.toLocaleString('ja-JP')}` : ''}</div>
                 ${table || '<div class="empty-state">這一天沒有收件紀錄</div>'}`;
         }
 
@@ -1849,6 +1864,7 @@
             const esc = v => escAttr(String(v ?? ''));
             const total = g.rows.reduce((a, r) => a + (Number(r.qty) || 0), 0);
             const amountTotal = g.rows.reduce((a, r) => a + (Number(r.amount) || 0), 0);
+            const recTotal = g.rows.reduce((a, r) => a + (Number(r.receive) || 0), 0);
             document.getElementById('detailTitle').textContent = `📑 ${g.name || '—'}`;
             document.getElementById('detailBody').innerHTML = `
                 <div class="slip-sheet">
@@ -1859,11 +1875,11 @@
                             <col style="width: 64px;">
                             <col style="width: 84px;">
                         </colgroup>
-                        <thead><tr><th>客戶編號</th><th>傳票編號</th><th class="num">件數</th><th class="num">付款金額</th></tr></thead>
+                        <thead><tr><th>客戶編號</th><th>傳票編號</th><th class="num">件數</th><th class="num">付款／收款</th></tr></thead>
                         <tbody>
-                            ${g.rows.map(r => `<tr><td>${esc(r.code)}</td><td>${esc(r.slipNo)}</td><td class="num">${esc(r.qty)} 件</td><td class="num">${r.amount ? esc(r.amount) : '—'}</td></tr>`).join('')}
+                            ${g.rows.map(r => `<tr><td>${esc(r.code)}</td><td>${esc(r.slipNo)}</td><td class="num">${esc(r.qty)} 件</td><td class="num amt-cell">付 ${r.amount ? '¥' + esc(r.amount) : '—'}<br>收 ${r.receive ? '¥' + esc(r.receive) : '—'}</td></tr>`).join('')}
                         </tbody>
-                        <tfoot><tr><td colspan="2">合計</td><td class="num">${total} 件</td><td class="num">${amountTotal || '—'}</td></tr></tfoot>
+                        <tfoot><tr><td colspan="2">合計</td><td class="num">${total} 件</td><td class="num amt-cell">付 ${amountTotal ? '¥' + amountTotal.toLocaleString('ja-JP') : '—'}<br>收 ${recTotal ? '¥' + recTotal.toLocaleString('ja-JP') : '—'}</td></tr></tfoot>
                     </table>
                 </div>`;
             document.getElementById('detailModal').classList.add('show');
@@ -1912,6 +1928,7 @@
             const totalPickup = pickupGroups.reduce((a, g) => a + (Number(g.rows[0].pickupCount) || 0), 0);
             const totalQty = twoGroups.reduce((a, g) => a + g.rows.reduce((b, r) => b + (Number(r.qty) || 0), 0), 0);
             const totalAmt = recordGroups.reduce((a, g) => a + g.rows.reduce((b, r) => b + (Number(r.amount) || 0), 0), 0);
+            const totalRec = recordGroups.reduce((a, g) => a + g.rows.reduce((b, r) => b + (Number(r.receive) || 0), 0), 0);
 
             const bodyH = recordGroups.reduce((a, g) =>
                 a + ROW + (g.method === '方式二' ? SLIP_HEAD + g.rows.length * SLIP + 14 : 0) + 10, 0);
@@ -1942,18 +1959,23 @@
             ctx.fillText(date, P, P + 56);
             ctx.font = `500 17px ${FONT}`;
             ctx.fillStyle = C.text;
-            ctx.fillText(`共 ${recordGroups.length} 個地點｜方式一收取 ${totalPickup} 件｜方式二 ${twoGroups.length} 個地點、${totalQty} 件${totalAmt ? `｜付款合計 ¥${totalAmt.toLocaleString('ja-JP')}` : ''}`, P, P + 96);
+            ctx.fillText(`共 ${recordGroups.length} 個地點｜方式一收取 ${totalPickup} 件｜方式二 ${twoGroups.length} 個地點、${totalQty} 件${totalAmt ? `｜付款合計 ¥${totalAmt.toLocaleString('ja-JP')}` : ''}${totalRec ? `｜收款合計 ¥${totalRec.toLocaleString('ja-JP')}` : ''}`, P, P + 96);
 
-            // table header
+            // table header: 順序 地點 件數 付款 收款
             let y = P + 120;
+            const COL = { no: P + 30, name: P + 76, qty: 458, pay: 568, rec: W - P - 16 };
+            const fmt = v => v ? `¥${Number(v).toLocaleString('ja-JP')}` : '—';
+            ctx.textBaseline = 'middle';
             ctx.fillStyle = C.sub;
             ctx.font = `600 15px ${FONT}`;
             ctx.textAlign = 'center';
-            ctx.fillText('順序', P + 30, y + HEAD / 2);
+            ctx.fillText('順序', COL.no, y + HEAD / 2);
             ctx.textAlign = 'left';
-            ctx.fillText('地點', P + 76, y + HEAD / 2);
+            ctx.fillText('地點', COL.name, y + HEAD / 2);
             ctx.textAlign = 'right';
-            ctx.fillText('件數', W - P - 16, y + HEAD / 2);
+            ctx.fillText('件數', COL.qty, y + HEAD / 2);
+            ctx.fillText('付款', COL.pay, y + HEAD / 2);
+            ctx.fillText('收款', COL.rec, y + HEAD / 2);
             y += HEAD;
 
             // rows
@@ -1962,61 +1984,70 @@
                 const count = isTwo
                     ? g.rows.reduce((a, r) => a + (Number(r.qty) || 0), 0)
                     : (Number(g.rows[0].pickupCount) || 0);
+                const money = groupMoney(g);
+                const mid = y + (ROW - 8) / 2;
 
                 ctx.fillStyle = C.row;
                 drawRoundRect(ctx, P, y, W - 2 * P, ROW - 8, 12);
                 ctx.fill();
 
                 ctx.fillStyle = C.no;
-                drawRoundRect(ctx, P + 10, y + 12, 52, ROW - 32, 8);
+                drawRoundRect(ctx, P + 10, y + 12, 40, ROW - 32, 8);
                 ctx.fill();
                 ctx.fillStyle = C.text;
                 ctx.font = `700 20px ${FONT}`;
                 ctx.textAlign = 'center';
-                ctx.fillText(String(i + 1), P + 36, y + (ROW - 8) / 2);
+                ctx.fillText(String(i + 1), COL.no, mid);
 
                 ctx.textAlign = 'left';
                 ctx.font = `600 22px ${FONT}`;
-                ctx.fillText(fitText(ctx, g.name || '—', W - 2 * P - 76 - 110), P + 76, y + (ROW - 8) / 2);
+                ctx.fillText(fitText(ctx, g.name || '—', COL.qty - 80 - COL.name), COL.name, mid);
 
                 ctx.textAlign = 'right';
                 ctx.fillStyle = C.accent;
-                const amtG = g.rows.reduce((a, r) => a + (Number(r.amount) || 0), 0);
-                ctx.fillText(`${count} 件`, W - P - 16, amtG ? y + (ROW - 8) / 2 - 10 : y + (ROW - 8) / 2);
-                if (amtG) {
-                    ctx.fillStyle = C.sub;
-                    ctx.font = `500 14px ${FONT}`;
-                    ctx.fillText(`¥${amtG.toLocaleString('ja-JP')}`, W - P - 16, y + (ROW - 8) / 2 + 12);
-                    ctx.fillStyle = C.accent;
-                }
+                ctx.font = `600 22px ${FONT}`;
+                ctx.fillText(`${count} 件`, COL.qty, mid);
+                ctx.font = `600 19px ${FONT}`;
+                ctx.fillStyle = money.pay ? C.text : C.sub;
+                ctx.fillText(fmt(money.pay), COL.pay, mid);
+                ctx.fillStyle = money.rec ? C.text : C.sub;
+                ctx.fillText(fmt(money.rec), COL.rec, mid);
 
                 y += ROW;
 
                 if (isTwo) {
-                    const x0 = P + 76, x1 = x0 + 190, xr = W - P - 16;
+                    const sx1 = COL.name + 150;
+                    const sy = y + SLIP_HEAD / 2;
                     ctx.fillStyle = C.sub;
-                    ctx.font = `500 15px ${FONT}`;
+                    ctx.font = `500 14px ${FONT}`;
                     ctx.textAlign = 'left';
-                    ctx.fillText('客戶編號', x0, y + SLIP_HEAD / 2);
-                    ctx.fillText('傳票編號', x1, y + SLIP_HEAD / 2);
+                    ctx.fillText('客戶編號', COL.name, sy);
+                    ctx.fillText('傳票編號', sx1, sy);
                     ctx.textAlign = 'right';
-                    ctx.fillText('件數', xr, y + SLIP_HEAD / 2);
+                    ctx.fillText('件數', COL.qty, sy);
+                    ctx.fillText('付款', COL.pay, sy);
+                    ctx.fillText('收款', COL.rec, sy);
                     y += SLIP_HEAD;
 
                     g.rows.forEach(r => {
                         ctx.strokeStyle = C.line;
                         ctx.lineWidth = 1;
                         ctx.beginPath();
-                        ctx.moveTo(x0, y + 0.5);
-                        ctx.lineTo(xr, y + 0.5);
+                        ctx.moveTo(COL.name, y + 0.5);
+                        ctx.lineTo(COL.rec, y + 0.5);
                         ctx.stroke();
+                        const ry = y + SLIP / 2;
                         ctx.fillStyle = C.text;
-                        ctx.font = `500 18px ${FONT}`;
+                        ctx.font = `500 17px ${FONT}`;
                         ctx.textAlign = 'left';
-                        ctx.fillText(fitText(ctx, r.code || '—', 170), x0, y + SLIP / 2);
-                        ctx.fillText(fitText(ctx, r.slipNo || '—', xr - x1 - 90), x1, y + SLIP / 2);
+                        ctx.fillText(fitText(ctx, r.code || '—', 130), COL.name, ry);
+                        ctx.fillText(fitText(ctx, r.slipNo || '—', 110), sx1, ry);
                         ctx.textAlign = 'right';
-                        ctx.fillText(`${r.qty || 0} 件`, xr, y + SLIP / 2);
+                        ctx.fillText(`${r.qty || 0} 件`, COL.qty, ry);
+                        ctx.fillStyle = r.amount ? C.text : C.sub;
+                        ctx.fillText(fmt(r.amount), COL.pay, ry);
+                        ctx.fillStyle = r.receive ? C.text : C.sub;
+                        ctx.fillText(fmt(r.receive), COL.rec, ry);
                         y += SLIP;
                     });
                     y += 14;
