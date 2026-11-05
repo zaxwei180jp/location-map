@@ -375,8 +375,8 @@
             flex-direction: column;
             align-items: flex-end;
             gap: 6px;
-            flex: 0 0 136px;
-            width: 136px;
+            flex: 0 0 158px;
+            width: 158px;
             min-width: 0;
         }
 
@@ -395,7 +395,8 @@
 
         .task-actions {
             display: flex;
-            gap: 4px;
+            gap: 2px;
+            flex-wrap: nowrap;
         }
 
         .task-btn:disabled {
@@ -726,7 +727,7 @@
         .small-btn.delete { background: var(--rose-soft); color: #9a5c5f; }
         .import-button.delete, .small-btn.delete:hover { background: #ead7d5; }
         .task-btn {
-            min-width: 40px; min-height: 40px; display: inline-flex; align-items: center; justify-content: center;
+            min-width: 36px; min-height: 36px; display: inline-flex; align-items: center; justify-content: center;
             border-radius: 10px; color: var(--sage-dark);
         }
         .task-btn:active { background: var(--sage-soft); }
@@ -1396,6 +1397,15 @@
             alert(`已加入 ${added} 個點位`);
         }
 
+        // Task card shows the address from the ward onward (drops 日本 / 〒 / 大阪府大阪市)
+        function shortAddress(addr) {
+            const a = (addr || '').replace(/^日本[、,]?\s*/, '').replace(/〒\s*\d{3}-?\d{4}\s*/, '').trim();
+            const i = a.indexOf('大阪市');
+            if (i !== -1) return a.slice(i + 3);
+            const m = a.match(/^.*?[都道府県].*?市/);
+            return m ? a.slice(m[0].length) : a;
+        }
+
         function renderDailyTasks() {
             const list = document.getElementById('taskList');
             if (!list) return;
@@ -1421,7 +1431,7 @@
                         <input type="checkbox" class="task-done" data-id="${t.id}" ${t.done ? 'checked' : ''}>
                         <div class="task-info">
                             <div class="task-name">${t.name}</div>
-                            <div class="task-addr">${t.address}</div>
+                            <div class="task-addr">${escAttr(shortAddress(t.address))}</div>
                             ${distHtml}
                             <div class="task-needs">
                                 <label><input type="checkbox" class="task-cart" data-id="${t.id}" ${t.needsCart ? 'checked' : ''}> 推車</label>
