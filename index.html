@@ -621,6 +621,18 @@
         .pk-entry-row { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
         .pk-entry-btns { display: flex; gap: 4px; flex-shrink: 0; }
         .rec-summary { display: flex; flex-direction: column; gap: 4px; }
+        .pk-section-title { font-size: 13px; color: var(--sub); font-weight: 600; margin: 2px 2px 8px; letter-spacing: 0.3px; }
+        .pk-card { background: var(--sand); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; }
+        .pk-card-top { display: flex; align-items: center; gap: 8px; }
+        .pk-no { background: var(--sage); color: #fff; width: 24px; height: 24px; border-radius: 50%; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .pk-code { font-weight: 700; font-size: 16px; color: var(--ink); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .pk-actions { display: flex; gap: 6px; flex-shrink: 0; }
+        .pk-actions button { min-height: 34px; padding: 6px 10px; border: none; border-radius: 8px; background: var(--card); color: var(--sage-dark); font-size: 14px; font-weight: 600; cursor: pointer; }
+        .pk-actions button[data-pk="del"] { color: #9a5c5f; }
+        .pk-card-meta { display: flex; flex-wrap: wrap; gap: 2px 14px; margin-top: 6px; font-size: 14px; color: var(--ink); padding-left: 32px; }
+        .pk-card-meta .money { color: var(--sage-dark); font-weight: 600; }
+        .pk-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+        .pk-grid2 .pk-label { margin-top: 6px; }
         .pk-entry { padding: 8px 10px; background: #f3efe9; border-radius: 8px; margin-bottom: 6px; font-size: 15px; }
         .rec-grid { display: grid; grid-template-columns: 44px 1fr 72px 80px; gap: 6px; align-items: center; }
         .rec-head { font-weight: 600; color: #7a726b; font-size: 13px; padding: 0 10px; margin-top: 12px; }
@@ -1706,15 +1718,24 @@
 
             if (methodOf(t) === '方式二') {
                 const editing = d.editIndex !== null && d.editIndex !== undefined;
-                const list = d.entries.map((e, i) =>
-                    `<div class="pk-entry pk-entry-row">
-                        <span>#${i + 1}　客戶 ${escAttr(e.code)}　傳票 ${escAttr(e.slipNo)}　${escAttr(e.qty)} 件${e.amount ? `　¥${escAttr(e.amount)}` : ''}</span>
-                        <span class="pk-entry-btns">
-                            <button class="task-btn" data-pk="edit" data-i="${i}">編輯</button>
-                            <button class="task-btn" data-pk="del" data-i="${i}">刪除</button>
-                        </span>
-                    </div>`
-                ).join('');
+                const fmtYen = v => v ? `¥${Number(v).toLocaleString('ja-JP')}` : '—';
+                const list = d.entries.map((e, i) => `
+                    <div class="pk-card">
+                        <div class="pk-card-top">
+                            <span class="pk-no">${i + 1}</span>
+                            <span class="pk-code">${escAttr(e.code || '—')}</span>
+                            <span class="pk-actions">
+                                <button data-pk="edit" data-i="${i}">編輯</button>
+                                <button data-pk="del" data-i="${i}">刪除</button>
+                            </span>
+                        </div>
+                        <div class="pk-card-meta">
+                            <span>傳票 ${escAttr(e.slipNo || '—')}</span>
+                            <span>${escAttr(e.qty || '0')} 件</span>
+                            <span>付 <b class="money">${fmtYen(e.amount)}</b></span>
+                            <span>收 <b class="money">${fmtYen(e.receive)}</b></span>
+                        </div>
+                    </div>`).join('');
                 const cur = editing ? d.entries[d.editIndex] : { code: '', slipNo: '', qty: '', amount: '', receive: '' };
                 const buttons = editing
                     ? `<button class="small-btn" id="pkCancelEdit">取消修改</button><button class="import-button" id="pkUpdate">更新這筆</button>`
@@ -1722,17 +1743,20 @@
                        ${d.entries.length ? `<button class="small-btn" id="pkEnd">結束</button>` : ''}
                        <button class="import-button" id="pkSave">儲存這筆</button>`;
                 body.innerHTML = `
-                    ${list ? `<div>${list}</div>` : ''}
+                    ${d.entries.length ? `<div class="pk-section-title">已加入 ${d.entries.length} 筆</div>${list}` : ''}
+                    <div class="pk-section-title">${editing ? '修改這一筆' : '新增一筆'}</div>
                     <label class="pk-label">客戶編號</label>
                     <input class="pk-input" id="pkCode" value="${escAttr(cur.code)}">
-                    <label class="pk-label">傳票編號</label>
-                    <input class="pk-input" id="pkSlip" inputmode="numeric" value="${escAttr(cur.slipNo)}">
-                    <label class="pk-label">件數</label>
-                    <input class="pk-input" id="pkQty" inputmode="numeric" value="${escAttr(cur.qty)}">
-                    <label class="pk-label">付款金額（選填）</label>
-                    <input class="pk-input" id="pkAmount" inputmode="decimal" value="${escAttr(cur.amount || '')}">
-                    <label class="pk-label">收款金額（選填）</label>
-                    <input class="pk-input" id="pkReceive" inputmode="decimal" value="${escAttr(cur.receive || '')}">
+                    <div class="pk-grid2">
+                        <div><label class="pk-label">傳票編號</label>
+                            <input class="pk-input" id="pkSlip" inputmode="numeric" value="${escAttr(cur.slipNo)}"></div>
+                        <div><label class="pk-label">件數</label>
+                            <input class="pk-input" id="pkQty" inputmode="numeric" value="${escAttr(cur.qty)}"></div>
+                        <div><label class="pk-label">付款金額（選填）</label>
+                            <input class="pk-input" id="pkAmount" inputmode="decimal" value="${escAttr(cur.amount || '')}"></div>
+                        <div><label class="pk-label">收款金額（選填）</label>
+                            <input class="pk-input" id="pkReceive" inputmode="decimal" value="${escAttr(cur.receive || '')}"></div>
+                    </div>
                     <div class="pk-row">${buttons}</div>`;
 
                 body.querySelectorAll('[data-pk]').forEach(btn => {
