@@ -2269,7 +2269,7 @@
                 navigator.geolocation.getCurrentPosition(
                     pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
                     err => reject(err),
-                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+                    { enableHighAccuracy: false, timeout: 4000, maximumAge: 120000 }
                 );
             });
         }
@@ -2284,12 +2284,16 @@
             // Open the window synchronously (inside the tap) so mobile browsers don't block it as a popup
             const win = window.open('', 'LocationMap', 'width=1200,height=800');
             if (win) win.document.write('<p style="font-family: sans-serif; padding: 16px;">定位中…</p>');
+            // Never wait long: if the phone is slow to answer, open the map with the last known position
             let pos = null;
             try {
-                pos = await getCurrentPositionOnce();
+                pos = await Promise.race([
+                    getCurrentPositionOnce(),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000))
+                ]);
                 userPos = pos;
             } catch (e) {
-                alert('無法取得目前位置，地圖將不顯示所在位置');
+                pos = userPos || null;
             }
             openMapWindow(locs, win, pos);
         }
