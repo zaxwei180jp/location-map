@@ -1018,7 +1018,7 @@
                             <div class="location-info" style="cursor: pointer; flex: 1;">
                                 <div class="name">${loc.name}</div>
                                 ${loc.notes ? `<div style="font-size: 13px; color: #7d8b78; margin-top: 4px;">${loc.notes}</div>` : ''}
-                                <div style="font-size: 12px; color: #a09789; margin-top: 4px;">${loc.address}</div>
+                                <div style="font-size: 12px; color: #a09789; margin-top: 4px;">${shortAddress(loc.address)}</div>
                             </div>
                         `;
                         // Add click event to location-info to open map
