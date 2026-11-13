@@ -1984,9 +1984,9 @@
             rows.forEach(r => {
                 const code = (r.code || '').trim();
                 const key = code.toUpperCase();
-                if (!map.has(key)) map.set(key, { code, slips: 0, qty: 0, amount: 0, receive: 0 });
+                if (!map.has(key)) map.set(key, { code, items: [], qty: 0, amount: 0, receive: 0 });
                 const a = map.get(key);
-                a.slips += 1;
+                a.items.push({ slipNo: (r.slipNo || '').trim(), qty: Number(r.qty) || 0, amount: Number(r.amount) || 0, receive: Number(r.receive) || 0 });
                 a.qty += Number(r.qty) || 0;
                 a.amount += Number(r.amount) || 0;
                 a.receive += Number(r.receive) || 0;
@@ -2068,14 +2068,19 @@
                 <div class="slip-sheet">
                     <table class="slip-table">
                         <colgroup>
-                            <col style="width: 34%;">
-                            <col style="width: 56px;">
+                            <col style="width: 26%;">
+                            <col>
                             <col style="width: 64px;">
                             <col style="width: 84px;">
                         </colgroup>
-                        <thead><tr><th>客戶編號</th><th class="num">傳票</th><th class="num">件數</th><th class="num">付款／收款</th></tr></thead>
+                        <thead><tr><th>客戶編號</th><th>傳票編號</th><th class="num">件數</th><th class="num">付款／收款</th></tr></thead>
                         <tbody>
-                            ${agg.map(a => `<tr><td>${esc(a.code)}</td><td class="num">${a.slips} 張</td><td class="num">${a.qty} 件</td><td class="num amt-cell">付 ${a.amount ? '¥' + a.amount.toLocaleString('ja-JP') : '—'}<br>收 ${a.receive ? '¥' + a.receive.toLocaleString('ja-JP') : '—'}</td></tr>`).join('')}
+                            ${agg.map(a => {
+                                const money = (p, rc) => `付 ${p ? '¥' + p.toLocaleString('ja-JP') : '—'}<br>收 ${rc ? '¥' + rc.toLocaleString('ja-JP') : '—'}`;
+                                const items = a.items.map((it, k) => `<tr><td>${k === 0 ? esc(a.code) : ''}</td><td>${esc(it.slipNo) || '—'}</td><td class="num">${it.qty} 件</td><td class="num amt-cell">${money(it.amount, it.receive)}</td></tr>`).join('');
+                                const sub = `<tr style="font-weight:700;background:#f1ece5"><td colspan="2">小計</td><td class="num">${a.qty} 件</td><td class="num amt-cell">${money(a.amount, a.receive)}</td></tr>`;
+                                return items + sub;
+                            }).join('')}
                         </tbody>
                         <tfoot><tr><td colspan="2">合計</td><td class="num">${total} 件</td><td class="num amt-cell">付 ${amountTotal ? '¥' + amountTotal.toLocaleString('ja-JP') : '—'}<br>收 ${recTotal ? '¥' + recTotal.toLocaleString('ja-JP') : '—'}</td></tr></tfoot>
                     </table>
@@ -2129,7 +2134,7 @@
             const totalRec = recordGroups.reduce((a, g) => a + g.rows.reduce((b, r) => b + (Number(r.receive) || 0), 0), 0);
 
             const bodyH = recordGroups.reduce((a, g) =>
-                a + ROW + (g.method === '方式二' ? SLIP_HEAD + aggregateByCode(g.rows).length * SLIP + 14 : 0) + 10, 0);
+                a + ROW + (g.method === '方式二' ? SLIP_HEAD + aggregateByCode(g.rows).reduce((s, x) => s + (x.items.length + 1) * SLIP, 0) + 14 : 0) + 10, 0);
             const H = P + 120 + HEAD + bodyH + 60 + P;
 
             const canvas = document.createElement('canvas');
@@ -2220,7 +2225,7 @@
                     ctx.font = `500 14px ${FONT}`;
                     ctx.textAlign = 'left';
                     ctx.fillText('客戶編號', COL.name, sy);
-                    ctx.fillText('傳票', sx1, sy);
+                    ctx.fillText('傳票編號', sx1, sy);
                     ctx.textAlign = 'right';
                     ctx.fillText('件數', COL.qty, sy);
                     ctx.fillText('付款', COL.pay, sy);
@@ -2228,24 +2233,42 @@
                     y += SLIP_HEAD;
 
                     aggregateByCode(g.rows).forEach(a => {
-                        ctx.strokeStyle = C.line;
-                        ctx.lineWidth = 1;
-                        ctx.beginPath();
-                        ctx.moveTo(COL.name, y + 0.5);
-                        ctx.lineTo(COL.rec, y + 0.5);
-                        ctx.stroke();
-                        const ry = y + SLIP / 2;
+                        a.items.forEach((it, k) => {
+                            ctx.strokeStyle = C.line;
+                            ctx.lineWidth = 1;
+                            ctx.beginPath();
+                            ctx.moveTo(COL.name, y + 0.5);
+                            ctx.lineTo(COL.rec, y + 0.5);
+                            ctx.stroke();
+                            const ry = y + SLIP / 2;
+                            ctx.fillStyle = C.text;
+                            ctx.font = `500 17px ${FONT}`;
+                            ctx.textAlign = 'left';
+                            if (k === 0) ctx.fillText(fitText(ctx, a.code || '—', 130), COL.name, ry);
+                            ctx.fillText(fitText(ctx, it.slipNo || '—', 190), sx1, ry);
+                            ctx.textAlign = 'right';
+                            ctx.fillText(`${it.qty} 件`, COL.qty, ry);
+                            ctx.fillStyle = it.amount ? C.text : C.sub;
+                            ctx.fillText(fmt(it.amount), COL.pay, ry);
+                            ctx.fillStyle = it.receive ? C.text : C.sub;
+                            ctx.fillText(fmt(it.receive), COL.rec, ry);
+                            y += SLIP;
+                        });
+                        // per-code subtotal
+                        ctx.fillStyle = C.row;
+                        drawRoundRect(ctx, COL.name - 8, y + 2, COL.rec - COL.name + 16, SLIP - 4, 8);
+                        ctx.fill();
+                        const sy2 = y + SLIP / 2;
                         ctx.fillStyle = C.text;
-                        ctx.font = `500 17px ${FONT}`;
+                        ctx.font = `700 17px ${FONT}`;
                         ctx.textAlign = 'left';
-                        ctx.fillText(fitText(ctx, a.code || '—', 130), COL.name, ry);
-                        ctx.fillText(`${a.slips} 張`, sx1, ry);
+                        ctx.fillText('小計', COL.name, sy2);
                         ctx.textAlign = 'right';
-                        ctx.fillText(`${a.qty} 件`, COL.qty, ry);
+                        ctx.fillText(`${a.qty} 件`, COL.qty, sy2);
                         ctx.fillStyle = a.amount ? C.text : C.sub;
-                        ctx.fillText(fmt(a.amount), COL.pay, ry);
+                        ctx.fillText(fmt(a.amount), COL.pay, sy2);
                         ctx.fillStyle = a.receive ? C.text : C.sub;
-                        ctx.fillText(fmt(a.receive), COL.rec, ry);
+                        ctx.fillText(fmt(a.receive), COL.rec, sy2);
                         y += SLIP;
                     });
                     y += 14;
