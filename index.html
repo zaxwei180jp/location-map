@@ -2078,7 +2078,7 @@
                             ${agg.map(a => {
                                 const money = (p, rc) => `付 ${p ? '¥' + p.toLocaleString('ja-JP') : '—'}<br>收 ${rc ? '¥' + rc.toLocaleString('ja-JP') : '—'}`;
                                 const items = a.items.map((it, k) => `<tr><td>${k === 0 ? esc(a.code) : ''}</td><td>${esc(it.slipNo) || '—'}</td><td class="num">${it.qty} 件</td><td class="num amt-cell">${money(it.amount, it.receive)}</td></tr>`).join('');
-                                const sub = `<tr style="font-weight:700;background:#f1ece5"><td colspan="2">小計</td><td class="num">${a.qty} 件</td><td class="num amt-cell">${money(a.amount, a.receive)}</td></tr>`;
+                                const sub = `<tr style="font-weight:700;background:#dfe6dc;color:#4f5c4b"><td colspan="2">小計</td><td class="num">${a.qty} 件</td><td class="num amt-cell">${money(a.amount, a.receive)}</td></tr>`;
                                 return items + sub;
                             }).join('')}
                         </tbody>
@@ -2255,19 +2255,18 @@
                             y += SLIP;
                         });
                         // per-code subtotal
-                        ctx.fillStyle = C.row;
+                        ctx.fillStyle = '#dfe6dc';
                         drawRoundRect(ctx, COL.name - 8, y + 2, COL.rec - COL.name + 16, SLIP - 4, 8);
                         ctx.fill();
                         const sy2 = y + SLIP / 2;
-                        ctx.fillStyle = C.text;
-                        ctx.font = `700 17px ${FONT}`;
+                        ctx.fillStyle = '#4f5c4b';
+                        ctx.font = `700 18px ${FONT}`;
                         ctx.textAlign = 'left';
                         ctx.fillText('小計', COL.name, sy2);
                         ctx.textAlign = 'right';
                         ctx.fillText(`${a.qty} 件`, COL.qty, sy2);
-                        ctx.fillStyle = a.amount ? C.text : C.sub;
                         ctx.fillText(fmt(a.amount), COL.pay, sy2);
-                        ctx.fillStyle = a.receive ? C.text : C.sub;
+                        ctx.fillStyle = '#4f5c4b';
                         ctx.fillText(fmt(a.receive), COL.rec, sy2);
                         y += SLIP;
                     });
