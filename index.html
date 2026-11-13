@@ -1959,6 +1959,12 @@
                     groups.push({ name: r.name, method: r.method, rows: [r] });
                 }
             });
+            // 方式二: sort the customer-code rows inside each visit (natural order, e.g. L-2 before L-10)
+            groups.forEach(g => {
+                if (g.method === '方式二') {
+                    g.rows.sort((a, b) => (a.code || '').localeCompare(b.code || '', 'en', { numeric: true, sensitivity: 'base' }));
+                }
+            });
             return groups;
         }
 
@@ -1970,6 +1976,23 @@
                 pay: g.rows.reduce((a, r) => a + (Number(r.amount) || 0), 0),
                 rec: g.rows.reduce((a, r) => a + (Number(r.receive) || 0), 0)
             };
+        }
+
+        // 方式二: merge slips with the same 客戶編號, sum 件數／付款／收款, sort by code
+        function aggregateByCode(rows) {
+            const map = new Map();
+            rows.forEach(r => {
+                const code = (r.code || '').trim();
+                const key = code.toUpperCase();
+                if (!map.has(key)) map.set(key, { code, slips: 0, qty: 0, amount: 0, receive: 0 });
+                const a = map.get(key);
+                a.slips += 1;
+                a.qty += Number(r.qty) || 0;
+                a.amount += Number(r.amount) || 0;
+                a.receive += Number(r.receive) || 0;
+            });
+            return [...map.values()].sort((x, y) =>
+                (x.code || '').localeCompare(y.code || '', 'en', { numeric: true, sensitivity: 'base' }));
         }
 
         function moneyLine(m) {
@@ -2039,19 +2062,20 @@
             const total = g.rows.reduce((a, r) => a + (Number(r.qty) || 0), 0);
             const amountTotal = g.rows.reduce((a, r) => a + (Number(r.amount) || 0), 0);
             const recTotal = g.rows.reduce((a, r) => a + (Number(r.receive) || 0), 0);
+            const agg = aggregateByCode(g.rows);
             document.getElementById('detailTitle').textContent = `📑 ${g.name || '—'}`;
             document.getElementById('detailBody').innerHTML = `
                 <div class="slip-sheet">
                     <table class="slip-table">
                         <colgroup>
-                            <col style="width: 30%;">
-                            <col>
+                            <col style="width: 34%;">
+                            <col style="width: 56px;">
                             <col style="width: 64px;">
                             <col style="width: 84px;">
                         </colgroup>
-                        <thead><tr><th>客戶編號</th><th>傳票編號</th><th class="num">件數</th><th class="num">付款／收款</th></tr></thead>
+                        <thead><tr><th>客戶編號</th><th class="num">傳票</th><th class="num">件數</th><th class="num">付款／收款</th></tr></thead>
                         <tbody>
-                            ${g.rows.map(r => `<tr><td>${esc(r.code)}</td><td>${esc(r.slipNo)}</td><td class="num">${esc(r.qty)} 件</td><td class="num amt-cell">付 ${r.amount ? '¥' + esc(r.amount) : '—'}<br>收 ${r.receive ? '¥' + esc(r.receive) : '—'}</td></tr>`).join('')}
+                            ${agg.map(a => `<tr><td>${esc(a.code)}</td><td class="num">${a.slips} 張</td><td class="num">${a.qty} 件</td><td class="num amt-cell">付 ${a.amount ? '¥' + a.amount.toLocaleString('ja-JP') : '—'}<br>收 ${a.receive ? '¥' + a.receive.toLocaleString('ja-JP') : '—'}</td></tr>`).join('')}
                         </tbody>
                         <tfoot><tr><td colspan="2">合計</td><td class="num">${total} 件</td><td class="num amt-cell">付 ${amountTotal ? '¥' + amountTotal.toLocaleString('ja-JP') : '—'}<br>收 ${recTotal ? '¥' + recTotal.toLocaleString('ja-JP') : '—'}</td></tr></tfoot>
                     </table>
@@ -2105,7 +2129,7 @@
             const totalRec = recordGroups.reduce((a, g) => a + g.rows.reduce((b, r) => b + (Number(r.receive) || 0), 0), 0);
 
             const bodyH = recordGroups.reduce((a, g) =>
-                a + ROW + (g.method === '方式二' ? SLIP_HEAD + g.rows.length * SLIP + 14 : 0) + 10, 0);
+                a + ROW + (g.method === '方式二' ? SLIP_HEAD + aggregateByCode(g.rows).length * SLIP + 14 : 0) + 10, 0);
             const H = P + 120 + HEAD + bodyH + 60 + P;
 
             const canvas = document.createElement('canvas');
@@ -2196,14 +2220,14 @@
                     ctx.font = `500 14px ${FONT}`;
                     ctx.textAlign = 'left';
                     ctx.fillText('客戶編號', COL.name, sy);
-                    ctx.fillText('傳票編號', sx1, sy);
+                    ctx.fillText('傳票', sx1, sy);
                     ctx.textAlign = 'right';
                     ctx.fillText('件數', COL.qty, sy);
                     ctx.fillText('付款', COL.pay, sy);
                     ctx.fillText('收款', COL.rec, sy);
                     y += SLIP_HEAD;
 
-                    g.rows.forEach(r => {
+                    aggregateByCode(g.rows).forEach(a => {
                         ctx.strokeStyle = C.line;
                         ctx.lineWidth = 1;
                         ctx.beginPath();
@@ -2214,14 +2238,14 @@
                         ctx.fillStyle = C.text;
                         ctx.font = `500 17px ${FONT}`;
                         ctx.textAlign = 'left';
-                        ctx.fillText(fitText(ctx, r.code || '—', 130), COL.name, ry);
-                        ctx.fillText(fitText(ctx, r.slipNo || '—', 110), sx1, ry);
+                        ctx.fillText(fitText(ctx, a.code || '—', 130), COL.name, ry);
+                        ctx.fillText(`${a.slips} 張`, sx1, ry);
                         ctx.textAlign = 'right';
-                        ctx.fillText(`${r.qty || 0} 件`, COL.qty, ry);
-                        ctx.fillStyle = r.amount ? C.text : C.sub;
-                        ctx.fillText(fmt(r.amount), COL.pay, ry);
-                        ctx.fillStyle = r.receive ? C.text : C.sub;
-                        ctx.fillText(fmt(r.receive), COL.rec, ry);
+                        ctx.fillText(`${a.qty} 件`, COL.qty, ry);
+                        ctx.fillStyle = a.amount ? C.text : C.sub;
+                        ctx.fillText(fmt(a.amount), COL.pay, ry);
+                        ctx.fillStyle = a.receive ? C.text : C.sub;
+                        ctx.fillText(fmt(a.receive), COL.rec, ry);
                         y += SLIP;
                     });
                     y += 14;
