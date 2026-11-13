@@ -2078,7 +2078,7 @@
                             ${agg.map(a => {
                                 const money = (p, rc) => `付 ${p ? '¥' + p.toLocaleString('ja-JP') : '—'}<br>收 ${rc ? '¥' + rc.toLocaleString('ja-JP') : '—'}`;
                                 const items = a.items.map((it, k) => `<tr><td>${k === 0 ? esc(a.code) : ''}</td><td>${esc(it.slipNo) || '—'}</td><td class="num">${it.qty} 件</td><td class="num amt-cell">${money(it.amount, it.receive)}</td></tr>`).join('');
-                                const sub = `<tr style="font-weight:700;background:#dfe6dc;color:#4f5c4b"><td colspan="2">小計</td><td class="num">${a.qty} 件</td><td class="num amt-cell">${money(a.amount, a.receive)}</td></tr>`;
+                                const sub = `<tr style="font-weight:700;background:#dfe6dc;color:#4f5c4b"><td colspan="2">小計</td><td class="num" style="padding-right:4px">${a.qty} 件</td><td class="num amt-cell" style="padding-right:4px">${money(a.amount, a.receive)}</td></tr>`;
                                 return items + sub;
                             }).join('')}
                         </tbody>
@@ -2264,10 +2264,9 @@
                         ctx.textAlign = 'left';
                         ctx.fillText('小計', COL.name, sy2);
                         ctx.textAlign = 'right';
-                        ctx.fillText(`${a.qty} 件`, COL.qty, sy2);
-                        ctx.fillText(fmt(a.amount), COL.pay, sy2);
-                        ctx.fillStyle = '#4f5c4b';
-                        ctx.fillText(fmt(a.receive), COL.rec, sy2);
+                        ctx.fillText(`${a.qty} 件`, COL.qty + 6, sy2);
+                        ctx.fillText(fmt(a.amount), COL.pay + 6, sy2);
+                        ctx.fillText(fmt(a.receive), COL.rec + 6, sy2);
                         y += SLIP;
                     });
                     y += 14;
